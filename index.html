@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dự Đoán XSMB - Cố Định Theo Ngày & IP</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+    body { font-family: 'Roboto', sans-serif; background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: #fff; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; }
+    .subtitle { text-align: center; font-size: 1.1rem; opacity: 0.9; margin-bottom: 30px; }
+    button { 
+      display: block; margin: 30px auto; padding: 15px 40px; font-size: 1.3rem; font-weight: bold;
+      background: #facc15; color: #1e3a8a; border: none; border-radius: 50px; cursor: pointer;
+      transition: all 0.3s; box-shadow: 0 5px 15px rgba(250,204,21,0.4);
+    }
+    button:hover { transform: scale(1.05); }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
+    .result { margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 25px; }
+    .prize { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 12px 20px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+    .prize-name { font-weight: bold; width: 120px; font-size: 1.1rem; }
+    .prize-numbers { font-size: 1.6rem; font-weight: bold; letter-spacing: 8px; text-align: right; }
+    .ip-info { text-align: center; font-size: 1.1rem; margin: 20px 0; padding: 12px; background: rgba(250,204,21,0.2); border-radius: 10px; }
+    .note { text-align: center; font-size: 0.95rem; opacity: 0.8; margin-top: 30px; }
+    .copy-btn { background: #22c55e; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔮 DỰ ĐOÁN XSMB</h1>
+    <p class="subtitle">Cố định theo ngày + IP (dùng VPN để đổi số)</p>
+    
+    <button id="btnPredict">DỰ ĐOÁN KỲ HÔM NAY</button>
+    
+    <div id="result" class="result" style="display:none;"></div>
+    
+    <div class="note">
+      Kết quả chỉ thay đổi khi đổi IP (VPN) hoặc sang ngày mới.<br>
+      Mỗi IP + mỗi ngày chỉ có <strong>1 bộ số duy nhất</strong>.
+    </div>
+  </div>
+
+  <script>
+    function seededRandom(seed) {
+      let x = Math.sin(seed) * 10000;
+      return function() {
+        x = (x * 9301 + 49297) % 233280;
+        return x / 233280;
+      };
+    }
+
+    async function getPrediction() {
+      const btn = document.getElementById('btnPredict');
+      btn.disabled = true;
+      btn.textContent = 'Đang lấy IP và tạo số...';
+
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const ip = ipData.ip;
+
+        const today = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const dateStr = today.split('/').reverse().join('');
+
+        const seedString = dateStr + ip;
+        let seed = 0;
+        for (let i = 0; i < seedString.length; i++) {
+          seed += seedString.charCodeAt(i) * (i + 1);
+        }
+
+        const random = seededRandom(seed);
+        const gen = (len) => String(Math.floor(random() * Math.pow(10, len))).padStart(len, '0');
+
+        const ketqua = {
+          DB: gen(5),
+          G1: gen(5),
+          G2: [gen(5), gen(5)],
+          G3: Array(6).fill().map(() => gen(5)),
+          G4: Array(7).fill().map(() => gen(4)),
+          G5: gen(4),
+          G6: Array(3).fill().map(() => gen(3)),
+          G7: Array(4).fill().map(() => gen(2))
+        };
+
+        let html = `
+          <h2 style="text-align:center; margin-bottom:15px;">Kỳ XSMB ngày ${today}</h2>
+          
+          <div class="ip-info">
+            📍 IP hiện tại: <strong>${ip}</strong>
+          </div>
+
+          <div class="prize"><span class="prize-name">Đặc biệt</span><span class="prize-numbers" style="color:#facc15;">${ketqua.DB}</span></div>
+          <div class="prize"><span class="prize-name">Giải 1</span><span class="prize-numbers">${ketqua.G1}</span></div>
+          <div class="prize"><span class="prize-name">Giải 2</span><span class="prize-numbers">${ketqua.G2[0]} &nbsp; ${ketqua.G2[1]}</span></div>
+          <div class="prize"><span class="prize-name">Giải 3</span><span class="prize-numbers">${ketqua.G3.join(' &nbsp; ')}</span></div>
+          <div class="prize"><span class="prize-name">Giải 4</span><span class="prize-numbers">${ketqua.G4.join(' &nbsp; ')}</span></div>
+          <div class="prize"><span class="prize-name">Giải 5</span><span class="prize-numbers">${ketqua.G5}</span></div>
+          <div class="prize"><span class="prize-name">Giải 6</span><span class="prize-numbers">${ketqua.G6.join(' &nbsp; ')}</span></div>
+          <div class="prize"><span class="prize-name">Giải 7</span><span class="prize-numbers">${ketqua.G7.join(' &nbsp; ')}</span></div>
+          
+          <div style="text-align:center; margin-top:25px;">
+            <button class="copy-btn" onclick="copyResult()">📋 Copy toàn bộ kết quả</button>
+          </div>
+        `;
+
+        document.getElementById('result').innerHTML = html;
+        document.getElementById('result').style.display = 'block';
+
+      } catch (err) {
+        alert('Không lấy được IP. Vui lòng kiểm tra mạng hoặc thử tắt/mở VPN.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'DỰ ĐOÁN LẠI';
+      }
+    }
+
+    function copyResult() {
+      const resultDiv = document.getElementById('result').innerText;
+      navigator.clipboard.writeText(resultDiv).then(() => {
+        alert('Đã copy kết quả vào clipboard!');
+      });
+    }
+
+    document.getElementById('btnPredict').addEventListener('click', getPrediction);
+  </script>
+</body>
+</html>
