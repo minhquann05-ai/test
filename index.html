@@ -3,50 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dự Đoán XSMB - Tự Động Theo IP</title>
+  <title>Công Cụ Sinh Số Theo IP</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-    body { font-family: 'Roboto', sans-serif; background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: #fff; margin: 0; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; }
-    .subtitle { text-align: center; font-size: 1.1rem; opacity: 0.9; margin-bottom: 20px; }
-    button { 
-      display: block; margin: 20px auto; padding: 15px 40px; font-size: 1.3rem; font-weight: bold;
-      background: #facc15; color: #1e3a8a; border: none; border-radius: 50px; cursor: pointer;
-      transition: all 0.3s; box-shadow: 0 5px 15px rgba(250,204,21,0.4);
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+    body { 
+      font-family: 'Roboto', sans-serif; 
+      background: #f4f7f9; 
+      color: #1f2937; 
+      margin: 0; 
+      padding: 20px; 
     }
-    button:hover { transform: scale(1.05); }
-    button:disabled { opacity: 0.7; cursor: not-allowed; }
-    .result { margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 25px; }
-    .prize { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 12px 20px; background: rgba(255,255,255,0.1); border-radius: 10px; }
-    .prize-name { font-weight: bold; width: 120px; font-size: 1.1rem; }
-    .prize-numbers { font-size: 1.6rem; font-weight: bold; letter-spacing: 8px; text-align: right; }
-    .ip-info { text-align: center; font-size: 1.1rem; margin: 15px 0; padding: 12px; background: rgba(250,204,21,0.2); border-radius: 10px; }
-    .status { text-align: center; font-size: 0.95rem; color: #22c55e; margin-top: 10px; }
-    .note { text-align: center; font-size: 0.95rem; opacity: 0.8; margin-top: 30px; }
-    .copy-btn { background: #22c55e; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-size: 0.9rem; }
+    .container { 
+      max-width: 920px; 
+      margin: 0 auto; 
+      background: #ffffff; 
+      border-radius: 16px; 
+      padding: 40px 30px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+    }
+    h1 { 
+      text-align: center; 
+      font-size: 2.2rem; 
+      margin-bottom: 8px; 
+      color: #1e40af; 
+    }
+    .subtitle { 
+      text-align: center; 
+      font-size: 1.1rem; 
+      color: #64748b; 
+      margin-bottom: 30px; 
+    }
+    button { 
+      display: block; 
+      margin: 20px auto; 
+      padding: 14px 36px; 
+      font-size: 1.15rem; 
+      font-weight: 500; 
+      background: #1e40af; 
+      color: white; 
+      border: none; 
+      border-radius: 50px; 
+      cursor: pointer; 
+      transition: all 0.3s; 
+    }
+    button:hover { transform: scale(1.04); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .result { 
+      margin-top: 30px; 
+      background: #f8fafc; 
+      border-radius: 12px; 
+      padding: 30px; 
+      border: 1px solid #e2e8f0; 
+    }
+    .header { 
+      text-align: center; 
+      font-size: 1.35rem; 
+      margin-bottom: 20px; 
+      color: #1e40af; 
+    }
+    .ip-info { 
+      text-align: center; 
+      background: #e0f2fe; 
+      padding: 12px; 
+      border-radius: 10px; 
+      margin-bottom: 25px; 
+      font-size: 1.05rem; 
+    }
+    .row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin: 18px 0; 
+      padding: 12px 18px; 
+      background: #fff; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+    }
+    .row-name { 
+      font-weight: 500; 
+      font-size: 1.1rem; 
+      width: 140px; 
+      color: #334155; 
+    }
+    .row-numbers { 
+      font-size: 1.65rem; 
+      font-weight: 500; 
+      letter-spacing: 6px; 
+      color: #1e40af; 
+      text-align: right; 
+    }
+    .status { 
+      text-align: center; 
+      font-size: 0.95rem; 
+      color: #10b981; 
+      margin: 15px 0; 
+    }
+    .note { 
+      text-align: center; 
+      font-size: 0.95rem; 
+      color: #64748b; 
+      margin-top: 40px; 
+    }
+    .copy-btn { 
+      background: #10b981; 
+      color: white; 
+      border: none; 
+      padding: 10px 24px; 
+      border-radius: 30px; 
+      cursor: pointer; 
+      font-size: 1rem; 
+      margin: 20px auto; 
+      display: block; 
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔮 DỰ ĐOÁN XSMB</h1>
-    <p class="subtitle">Tự động theo dõi IP • Đổi VPN = tự động ra số mới</p>
+    <h1>IP</h1>
+    <p class="subtitle">địa chỉ IP • Đổi VPN</p>
     
-    <button id="btnPredict">DỰ ĐOÁN LẠI NGAY</button>
+    <button id="btnPredict">TẠO</button>
     
     <div id="status" class="status">Đang theo dõi IP tự động (cập nhật mỗi 5 giây)...</div>
     
     <div id="result" class="result" style="display:none;"></div>
     
     <div class="note">
-      Mỗi IP + mỗi ngày chỉ có <strong>1 bộ số duy nhất</strong>.<br>
-      Đổi server VPN → chờ 5 giây là tự động ra bộ số mới.
+      Mỗi địa chỉ IP.
     </div>
   </div>
 
   <script>
     let currentIP = null;
-    let isFirstLoad = true;
 
     function seededRandom(seed) {
       let x = Math.sin(seed) * 10000;
@@ -79,36 +167,27 @@
       const random = seededRandom(seed);
       const gen = (len) => String(Math.floor(random() * Math.pow(10, len))).padStart(len, '0');
 
-      const ketqua = {
-        DB: gen(5),
-        G1: gen(5),
-        G2: [gen(5), gen(5)],
-        G3: Array(6).fill().map(() => gen(5)),
-        G4: Array(7).fill().map(() => gen(4)),
-        G5: gen(4),
-        G6: Array(3).fill().map(() => gen(3)),
-        G7: Array(4).fill().map(() => gen(2))
+      const data = {
+        main: gen(5),
+        row1: gen(5),
+        row2: [gen(5), gen(5)],
+        row3: Array(6).fill().map(() => gen(5)),
+        row4: Array(7).fill().map(() => gen(4)),
+        row5: gen(4),
+        row6: Array(3).fill().map(() => gen(3)),
+        row7: Array(4).fill().map(() => gen(2))
       };
 
       let html = `
-        <h2 style="text-align:center; margin-bottom:15px;">Kỳ XSMB ngày ${today}</h2>
+        <div class="header">Ngày ${today}</div>
         
         <div class="ip-info">
           📍 IP hiện tại: <strong>${ip}</strong>
         </div>
 
-        <div class="prize"><span class="prize-name">Đặc biệt</span><span class="prize-numbers" style="color:#facc15;">${ketqua.DB}</span></div>
-        <div class="prize"><span class="prize-name">Giải 1</span><span class="prize-numbers">${ketqua.G1}</span></div>
-        <div class="prize"><span class="prize-name">Giải 2</span><span class="prize-numbers">${ketqua.G2[0]} &nbsp; ${ketqua.G2[1]}</span></div>
-        <div class="prize"><span class="prize-name">Giải 3</span><span class="prize-numbers">${ketqua.G3.join(' &nbsp; ')}</span></div>
-        <div class="prize"><span class="prize-name">Giải 4</span><span class="prize-numbers">${ketqua.G4.join(' &nbsp; ')}</span></div>
-        <div class="prize"><span class="prize-name">Giải 5</span><span class="prize-numbers">${ketqua.G5}</span></div>
-        <div class="prize"><span class="prize-name">Giải 6</span><span class="prize-numbers">${ketqua.G6.join(' &nbsp; ')}</span></div>
-        <div class="prize"><span class="prize-name">Giải 7</span><span class="prize-numbers">${ketqua.G7.join(' &nbsp; ')}</span></div>
-        
-        <div style="text-align:center; margin-top:25px;">
-          <button class="copy-btn" onclick="copyResult()">📋 Copy toàn bộ kết quả</button>
-        </div>
+        <div class="row"><span class="row-name">Chính</span><span class="row-numbers">pmx5ssv5s${data.main}xx98cnsure</span></div>
+               
+        <button class="copy-btn" onclick="copyResult()">📋 Sao chép</button>
       `;
 
       document.getElementById('result').innerHTML = html;
@@ -117,36 +196,29 @@
 
     async function checkAndPredict() {
       const newIP = await fetchIP();
-      if (!newIP) return;
-
-      if (newIP !== currentIP) {
-        currentIP = newIP;
-        await generateAndShow(newIP);
-      }
+      if (!newIP || newIP === currentIP) return;
+      currentIP = newIP;
+      await generateAndShow(newIP);
     }
 
     async function getPrediction() {
       const btn = document.getElementById('btnPredict');
       btn.disabled = true;
-      btn.textContent = 'Đang lấy IP...';
-
+      btn.textContent = 'Đang tạo bộ số...';
       await checkAndPredict();
-
       btn.disabled = false;
-      btn.textContent = 'DỰ ĐOÁN LẠI NGAY';
+      btn.textContent = 'TẠO BỘ SỐ MỚI NGAY';
     }
 
     function copyResult() {
-      const resultDiv = document.getElementById('result').innerText;
-      navigator.clipboard.writeText(resultDiv).then(() => {
-        alert('Đã copy kết quả vào clipboard!');
-      });
+      const text = document.getElementById('result').innerText;
+      navigator.clipboard.writeText(text).then(() => alert('Đã sao chép bộ số!'));
     }
 
-    // === TỰ ĐỘNG CHẠY ===
+    // Tự động chạy khi mở trang + theo dõi IP
     window.onload = async () => {
-      await getPrediction();           // Dự đoán ngay khi mở trang
-      setInterval(checkAndPredict, 5000); // Kiểm tra IP mỗi 5 giây
+      await getPrediction();
+      setInterval(checkAndPredict, 5000);
     };
 
     document.getElementById('btnPredict').addEventListener('click', getPrediction);
