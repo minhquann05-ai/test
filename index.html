@@ -15,17 +15,18 @@
     .wrap{ max-width:800px; margin:0 auto; padding:10px; }
     h1{ margin:0 0 15px; font-size:20px; color: #14532d; text-align: center; text-transform: uppercase; }
    
-    /* GRID TRÊN CÙNG - TOOL FRIENDLY */
     .grid{
       display:grid;
       grid-template-columns: repeat(5, 1fr) var(--separator-width) repeat(5, 1fr);
-      gap:var(--gap); margin-bottom: 20px;
+      gap:var(--gap); 
+      margin-top: 80px;
     }
     .separator{ position:relative; width:100%; height:100%; }
     .separator::after{ content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; background:#e2e8f0; transform:translateX(-50%); }
    
     .cell{ height:var(--cell-size); display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--cell-bg); cursor:pointer; font-weight:600; border:1px solid #e2e8f0; font-size: 16px; transition: 0.1s; outline: none; }
     .cell.selected{ background:var(--selected-bg); color:var(--selected-color); border-color: var(--accent); }
+
     .controls-container {
       background: #f1f5f9;
       padding: 15px;
@@ -53,6 +54,7 @@
     .btn-random.running { background: #ef4444; }
     .btn-ghost{ background:#fff; border:1px solid #cbd5e1; color: #334155; }
     .btn-f5 { background: #64748b; color: white; }
+
     .spacer-divider {
       height: 100vh;
       display: flex;
@@ -62,7 +64,26 @@
       font-weight: bold;
       font-style: italic;
       text-align: center;
+      margin: 60px 0;
     }
+
+    /* ==================== PHẦN SINH SỐ THEO IP ==================== */
+    .generator-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .gen-header { text-align:center; font-size:1.1rem; color:#1e40af; margin-bottom:8px; }
+    .gen-subtitle { text-align:center; font-size:0.95rem; color:#64748b; margin-bottom:15px; }
+    .gen-result { background:#fff; border-radius:10px; padding:20px; border:1px solid #e2e8f0; }
+    .ip-line { text-align:center; background:#e0f2fe; padding:8px; border-radius:8px; margin-bottom:18px; font-size:1rem; }
+    .row-gen { display:flex; justify-content:space-between; align-items:center; margin:14px 0; padding:10px 14px; background:#f8fafc; border-radius:8px; }
+    .row-name { font-weight:500; color:#334155; width:110px; }
+    .row-numbers { font-size:1.5rem; font-weight:600; letter-spacing:4px; color:#1e40af; }
+    .btn-add-db { background:#16a34a; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; margin:15px auto 0; display:block; }
+
     .result { margin-top: 20px; }
     .result h2 { font-size: 16px; color: #475569; margin-bottom: 10px; border-left: 4px solid #16a34a; padding-left: 10px; }
    
@@ -74,22 +95,18 @@
     .custom-notes { background: #fffbeb !important; border: 1px solid #fcd34d !important; height: 180px; }
     .btn-copy-notes { background: #f59e0b; color: white; width: 100%; margin-bottom: 100px; }
 
-    /* ==================== PHẦN SINH SỐ THEO IP ==================== */
-    .generator-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
+    .big-spacer {
+      height: 55vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 1.3rem;
+      font-weight: bold;
+      font-style: italic;
+      text-align: center;
+      margin: 20px 0;
     }
-    .gen-header { text-align:center; font-size:1.1rem; color:#1e40af; margin-bottom:8px; }
-    .gen-subtitle { text-align:center; font-size:0.95rem; color:#64748b; margin-bottom:15px; }
-    .gen-result { background:#fff; border-radius:10px; padding:20px; border:1px solid #e2e8f0; }
-    .ip-line { text-align:center; background:#e0f2fe; padding:8px; border-radius:8px; margin-bottom:18px; font-size:1rem; }
-    .row-gen { display:flex; justify-content:space-between; align-items:center; margin:14px 0; padding:10px 14px; background:#f8fafc; border-radius:8px; }
-    .row-name { font-weight:500; color:#334155; width:110px; }
-    .row-numbers { font-size:1.5rem; font-weight:600; letter-spacing:4px; color:#1e40af; }
-    .btn-add-db { background:#16a34a; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; margin:15px auto 0; display:block; }
   </style>
 </head>
 <body>
@@ -98,17 +115,25 @@
 
     <!-- ==================== CÔNG CỤ SINH SỐ THEO IP ==================== -->
     <div class="generator-box">
-      <div class="gen-header">IP</div>
+      <div class="gen-header">Công Cụ IP</div>
       <p class="gen-subtitle">Tự động IP • Đổi VPN</p>
       
       <button id="genBtn" class="btn" style="background:#1e40af;color:white;width:100%;margin-bottom:15px;">TẠO</button>
       
-      <div id="genStatus" style="text-align:center;font-size:0.9rem;color:#10b981;margin-bottom:10px;">Đang theo dõi IP (cập nhật mỗi 5 giây)...</div>
+      <div id="genStatus" style="text-align:center;font-size:0.9rem;color:#10b981;margin-bottom:8px;">Đang theo dõi IP...</div>
+      
+      <!-- ĐẾM NGƯỢC MỚI -->
+      <div id="countdown" style="text-align:center;font-size:1.1rem;color:#f59e0b;margin:12px 0;">
+        Kiểm tra IP sau: <strong id="timer">3</strong>s
+      </div>
       
       <div id="genResult" class="gen-result" style="display:none;"></div>
     </div>
 
-    <!-- GRID CỦA BẠN (giữ nguyên) -->
+    <div class="big-spacer">
+      ▼ Cuộn xuống để xem ô số Number Box ▼
+    </div>
+
     <div id="grid" class="grid"></div>
    
     <div class="controls-container">
@@ -122,7 +147,7 @@
       <div class="btn-row">
         <div class="input-group">
           <label>LƯỢT:</label>
-          <input type="number" id="destinyTurn" value="">
+          <input type="number" id="destinyTurn" value="68">
         </div>
         <button id="randomBtn" class="btn btn-random">xoay </button>
         <button id="f5Btn" class="btn btn-f5">F5</button>
@@ -145,8 +170,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script>
-    // ==================== FIREBASE & CODE CỦA BẠN (GIỮ NGUYÊN) ====================
-    const firebaseConfig = { /* giữ nguyên như bạn đưa */ 
+    const firebaseConfig = {
       apiKey: "AIzaSyD-tbxT6acKrTgAqNxHyDZHW2gD06KX1CI",
       authDomain: "my-work-a159e.firebaseapp.com",
       projectId: "my-work-a159e",
@@ -161,6 +185,10 @@
     let selectedArr = [];
     let isRunning = false;
     const freeInput = document.getElementById('freeInput');
+    let currentIP = null;
+    let currentMain = "";
+    let countdownTimer = 5;
+    let countdownInterval = null;
 
     // GRID
     const grid = document.getElementById('grid');
@@ -219,7 +247,7 @@
     }
 
     let timer;
-    document.getElementById('randomBtn').onclick = () => { /* giữ nguyên code random của bạn */ 
+    document.getElementById('randomBtn').onclick = () => {
       if(isRunning){ clearInterval(timer); isRunning=false; updateUI(); document.getElementById('randomBtn').textContent="xoay "; return; }
       const target = parseInt(document.getElementById('destinyTurn').value) || 68;
       isRunning = true; let turn = 0, res = 0;
@@ -258,10 +286,7 @@
     }
     load();
 
-    // ==================== CODE SINH SỐ THEO IP + NÚT THÊM 2 SỐ CUỐI ====================
-    let currentIP = null;
-    let currentMain = "";   // lưu Số Chính 5 số để lấy 2 số cuối
-
+    // ==================== SINH SỐ + ĐẾM NGƯỢC ====================
     function seededRandom(seed) {
       let x = Math.sin(seed) * 10000;
       return function() {
@@ -292,9 +317,7 @@
       const gen = (len) => String(Math.floor(random() * Math.pow(10, len))).padStart(len, '0');
 
       const data = {
-        main: gen(5),
-        row1: gen(5),
-        row2: [gen(5), gen(5)],
+        main: gen(5), row1: gen(5), row2: [gen(5), gen(5)],
         row3: Array(6).fill().map(() => gen(5)),
         row4: Array(7).fill().map(() => gen(4)),
         row5: gen(4),
@@ -302,12 +325,13 @@
         row7: Array(4).fill().map(() => gen(2))
       };
 
-      currentMain = data.main;   // lưu để dùng cho nút thêm 2 số cuối
+      currentMain = data.main;
 
       let html = `
         <div class="ip-line">📍 IP hiện tại: <strong>${ip}</strong></div>
-        <div class="row-gen"><span class="row-name">Số Chính</span><span class="row-numbers">abf4sd${data.main}bdfvjsa3</span></div>
-        <button class="btn-add-db" onclick="addLastTwoDigits()">➕</button>
+        <div class="row-gen"><span class="row-name">Số Chính</span><span class="row-numbers">mjwn2ds${data.main}vcsn2a</span></div>
+        
+        <button class="btn-add-db" onclick="addLastTwoDigits()">➕ Thêm</button>
       `;
 
       document.getElementById('genResult').innerHTML = html;
@@ -316,9 +340,14 @@
 
     window.addLastTwoDigits = function() {
       if (!currentMain) return;
-      const lastTwo = currentMain.slice(-2);   // lấy 2 số cuối
-      toggle(lastTwo);                         // thêm vào grid của bạn
-      alert(`Đã thêm!`);
+      const lastTwo = currentMain.slice(-2);
+      if (selectedArr.includes(lastTwo)) {
+        alert(`Số ${lastTwo} đã tồn tại!`);
+      } else {
+        selectedArr.push(lastTwo);
+        updateUI();
+        alert(`Đã thêm số ${lastTwo}!`);
+      }
     };
 
     async function checkAndPredict() {
@@ -326,6 +355,24 @@
       if (!newIP || newIP === currentIP) return;
       currentIP = newIP;
       await generateAndShow(newIP);
+    }
+
+    // ===================== ĐẾM NGƯỢC =====================
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      countdownTimer = 3;
+      document.getElementById('timer').textContent = countdownTimer;
+
+      countdownInterval = setInterval(() => {
+        countdownTimer--;
+        document.getElementById('timer').textContent = countdownTimer;
+
+        if (countdownTimer <= 0) {
+          checkAndPredict();        // tự động kiểm tra IP
+          countdownTimer = 3;       // reset về 5
+          document.getElementById('timer').textContent = countdownTimer;
+        }
+      }, 1000);
     }
 
     async function manualGenerate() {
@@ -337,10 +384,9 @@
       btn.textContent = 'TẠO / LÀM MỚI BỘ SỐ';
     }
 
-    // Tự động chạy khi mở trang
     window.onload = async () => {
-      await checkAndPredict();
-      setInterval(checkAndPredict, 3000);   // kiểm tra IP mỗi 5 giây
+      await checkAndPredict();   // lần đầu
+      startCountdown();          // bắt đầu đếm ngược
       document.getElementById('genBtn').addEventListener('click', manualGenerate);
     };
   </script>
