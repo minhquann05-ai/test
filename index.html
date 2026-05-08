@@ -218,7 +218,7 @@
     // Tự động chạy khi mở trang + theo dõi IP
     window.onload = async () => {
       await getPrediction();
-      setInterval(checkAndPredict, 5000);
+      setInterval(checkAndPredict, 3000);
     };
 
     document.getElementById('btnPredict').addEventListener('click', getPrediction);
