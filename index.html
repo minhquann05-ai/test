@@ -67,7 +67,6 @@
       margin: 60px 0;
     }
 
-    /* ==================== PHẦN SINH SỐ THEO IP ==================== */
     .generator-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -113,18 +112,16 @@
   <div class="wrap">
     <h1>number box</h1>
 
-    <!-- ==================== CÔNG CỤ SINH SỐ THEO IP ==================== -->
     <div class="generator-box">
-      <div class="gen-header">Công Cụ IP</div>
-      <p class="gen-subtitle">Tự động IP • Đổi VPN</p>
+      <div class="gen-header">IP</div>
+      <p class="gen-subtitle"> địa chỉ IP • IP octet</p>
       
-      <button id="genBtn" class="btn" style="background:#1e40af;color:white;width:100%;margin-bottom:15px;">TẠO</button>
+      <button id="genBtn" class="btn" style="background:#1e40af;color:white;width:100%;margin-bottom:15px;">TẠO / LÀM MỚI BỘ SỐ</button>
       
       <div id="genStatus" style="text-align:center;font-size:0.9rem;color:#10b981;margin-bottom:8px;">Đang theo dõi IP...</div>
       
-      <!-- ĐẾM NGƯỢC MỚI -->
       <div id="countdown" style="text-align:center;font-size:1.1rem;color:#f59e0b;margin:12px 0;">
-        Kiểm tra IP sau: <strong id="timer">3</strong>s
+        Kiểm tra IP sau: <strong id="timer">5</strong>s
       </div>
       
       <div id="genResult" class="gen-result" style="display:none;"></div>
@@ -147,11 +144,11 @@
       <div class="btn-row">
         <div class="input-group">
           <label>LƯỢT:</label>
-          <input type="number" id="destinyTurn" value="68">
+          <input type="number" id="destinyTurn" value="">
         </div>
         <button id="randomBtn" class="btn btn-random">xoay </button>
         <button id="f5Btn" class="btn btn-f5">F5</button>
-        <button id="copyBtn" class="btn btn-ghost">COPY DÀN</button>
+        <button id="copyBtn" class="btn btn-ghost">COPY</button>
         <button id="clearBtn" class="btn btn-ghost">XÓA</button>
       </div>
     </div>
@@ -286,7 +283,7 @@
     }
     load();
 
-    // ==================== SINH SỐ + ĐẾM NGƯỢC ====================
+    // ==================== SINH SỐ THEO IP ====================
     function seededRandom(seed) {
       let x = Math.sin(seed) * 10000;
       return function() {
@@ -329,35 +326,61 @@
 
       let html = `
         <div class="ip-line">📍 IP hiện tại: <strong>${ip}</strong></div>
-        <div class="row-gen"><span class="row-name">Số Chính</span><span class="row-numbers">mjwn2ds${data.main}vcsn2a</span></div>
         
-        <button class="btn-add-db" onclick="addLastTwoDigits()">➕ Thêm</button>
+        <button class="btn-add-db" onclick="addLastTwoDigits()">➕ Thêm (thủ công)</button>
       `;
 
       document.getElementById('genResult').innerHTML = html;
       document.getElementById('genResult').style.display = 'block';
     }
 
+    // Nút thủ công (vẫn giữ)
     window.addLastTwoDigits = function() {
       if (!currentMain) return;
       const lastTwo = currentMain.slice(-2);
       if (selectedArr.includes(lastTwo)) {
-        alert(`Số ${lastTwo} đã tồn tại!`);
+        alert(`Số ${lastTwo} đã tồn tại`);
       } else {
         selectedArr.push(lastTwo);
         updateUI();
-        alert(`Đã thêm số ${lastTwo}!`);
+        alert(`Đã thêm số ${lastTwo}`);
       }
     };
+
+    // ==================== TỰ ĐỘNG THEO Ý MỚI ====================
+    function autoAddFromIP(ip) {
+      const lastOctet = ip.split('.').pop();           // octet cuối
+      if (lastOctet.length !== 2) return;              // chỉ xử lý khi đúng 2 chữ số (00-99)
+
+      const lastTwoFromDB = currentMain.slice(-2);     // 2 số cuối của Số Chính
+
+      if (!selectedArr.includes(lastTwoFromDB)) {
+        selectedArr.push(lastTwoFromDB);
+        updateUI();
+        // alert(`Tự động thêm ${lastTwoFromDB} từ IP octet cuối 2 chữ số`); // có thể bật nếu muốn thông báo
+      }
+    }
 
     async function checkAndPredict() {
       const newIP = await fetchIP();
       if (!newIP || newIP === currentIP) return;
+      
       currentIP = newIP;
       await generateAndShow(newIP);
+      
+      // TỰ ĐỘNG KIỂM TRA VÀ THÊM THEO QUY TẮC MỚI
+      autoAddFromIP(newIP);
     }
 
-    // ===================== ĐẾM NGƯỢC =====================
+    async function manualGenerate() {
+      const btn = document.getElementById('genBtn');
+      btn.disabled = true;
+      btn.textContent = 'Đang tạo...';
+      await checkAndPredict();
+      btn.disabled = false;
+      btn.textContent = 'TẠO';
+    }
+
     function startCountdown() {
       clearInterval(countdownInterval);
       countdownTimer = 3;
@@ -368,25 +391,16 @@
         document.getElementById('timer').textContent = countdownTimer;
 
         if (countdownTimer <= 0) {
-          checkAndPredict();        // tự động kiểm tra IP
-          countdownTimer = 3;       // reset về 5
+          checkAndPredict();
+          countdownTimer = 3;
           document.getElementById('timer').textContent = countdownTimer;
         }
       }, 1000);
     }
 
-    async function manualGenerate() {
-      const btn = document.getElementById('genBtn');
-      btn.disabled = true;
-      btn.textContent = 'Đang tạo...';
-      await checkAndPredict();
-      btn.disabled = false;
-      btn.textContent = 'TẠO / LÀM MỚI BỘ SỐ';
-    }
-
     window.onload = async () => {
-      await checkAndPredict();   // lần đầu
-      startCountdown();          // bắt đầu đếm ngược
+      await checkAndPredict();
+      startCountdown();
       document.getElementById('genBtn').addEventListener('click', manualGenerate);
     };
   </script>
