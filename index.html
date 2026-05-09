@@ -11,22 +11,21 @@
       --separator-width: 20px;
     }
     body{ margin:0; background:var(--bg); font-family:Inter, system-ui, sans-serif; padding: 20px; }
-   
+  
     .wrap{ max-width:800px; margin:0 auto; padding:10px; }
     h1{ margin:0 0 15px; font-size:20px; color: #14532d; text-align: center; text-transform: uppercase; }
-   
+  
     .grid{
       display:grid;
       grid-template-columns: repeat(5, 1fr) var(--separator-width) repeat(5, 1fr);
-      gap:var(--gap); 
+      gap:var(--gap);
       margin-top: 80px;
     }
     .separator{ position:relative; width:100%; height:100%; }
     .separator::after{ content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; background:#e2e8f0; transform:translateX(-50%); }
-   
+  
     .cell{ height:var(--cell-size); display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--cell-bg); cursor:pointer; font-weight:600; border:1px solid #e2e8f0; font-size: 16px; transition: 0.1s; outline: none; }
     .cell.selected{ background:var(--selected-bg); color:var(--selected-color); border-color: var(--accent); }
-
     .controls-container {
       background: #f1f5f9;
       padding: 15px;
@@ -44,17 +43,16 @@
     .stat-label { font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 2px; }
     .stat-val { font-size: 18px; font-weight: 800; color: #1e293b; font-family: monospace; }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
-   
+  
     .input-group { display: flex; align-items: center; gap: 5px; background: #fff; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; }
     .input-group label { font-size: 11px; font-weight: bold; color: #1e40af; }
     .input-group input { width: 45px; border: none; font-weight: 800; text-align: center; color: #1e40af; font-size: 16px; outline: none; }
-   
+  
     button.btn{ padding: 12px 16px; border-radius:8px; border:0; cursor:pointer; font-weight:700; font-size: 13px; transition: 0.2s; }
     .btn-random{ background: #16a34a; color: white; flex-grow: 1; min-width: 120px; }
     .btn-random.running { background: #ef4444; }
     .btn-ghost{ background:#fff; border:1px solid #cbd5e1; color: #334155; }
     .btn-f5 { background: #64748b; color: white; }
-
     .spacer-divider {
       height: 100vh;
       display: flex;
@@ -66,7 +64,6 @@
       text-align: center;
       margin: 60px 0;
     }
-
     .generator-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -82,10 +79,9 @@
     .row-name { font-weight:500; color:#334155; width:110px; }
     .row-numbers { font-size:1.5rem; font-weight:600; letter-spacing:4px; color:#1e40af; }
     .btn-add-db { background:#16a34a; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; margin:15px auto 0; display:block; }
-
     .result { margin-top: 20px; }
     .result h2 { font-size: 16px; color: #475569; margin-bottom: 10px; border-left: 4px solid #16a34a; padding-left: 10px; }
-   
+  
     textarea {
       width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;
       font-family: monospace; font-size: 14px; background: #fafafa; line-height: 1.6;
@@ -93,7 +89,6 @@
     }
     .custom-notes { background: #fffbeb !important; border: 1px solid #fcd34d !important; height: 180px; }
     .btn-copy-notes { background: #f59e0b; color: white; width: 100%; margin-bottom: 100px; }
-
     .big-spacer {
       height: 55vh;
       display: flex;
@@ -111,28 +106,25 @@
 <body>
   <div class="wrap">
     <h1>number box</h1>
-
     <div class="generator-box">
       <div class="gen-header">IP</div>
       <p class="gen-subtitle"> địa chỉ IP • IP octet</p>
-      
+     
       <button id="genBtn" class="btn" style="background:#1e40af;color:white;width:100%;margin-bottom:15px;">TẠO / LÀM MỚI BỘ SỐ</button>
-      
+     
       <div id="genStatus" style="text-align:center;font-size:0.9rem;color:#10b981;margin-bottom:8px;">Đang theo dõi IP...</div>
-      
+     
       <div id="countdown" style="text-align:center;font-size:1.1rem;color:#f59e0b;margin:12px 0;">
         Kiểm tra IP sau: <strong id="timer">5</strong>s
       </div>
-      
+     
       <div id="genResult" class="gen-result" style="display:none;"></div>
     </div>
-
     <div class="big-spacer">
       ▼ Cuộn xuống để xem ô số Number Box ▼
     </div>
-
     <div id="grid" class="grid"></div>
-   
+  
     <div class="controls-container">
       <div class="stats-row">
         <div class="stat-item"><div class="stat-label">TỔNG</div><div id="count" class="stat-val">0</div></div>
@@ -152,18 +144,16 @@
         <button id="clearBtn" class="btn btn-ghost">XÓA</button>
       </div>
     </div>
-
     <div class="spacer-divider">▼ Cuộn xuống để xem Kết quả & Ghi chú ▼</div>
     <div class="result">
       <h2>KẾT QUẢ DÀN SỐ (THỨ TỰ CHỌN)</h2>
       <textarea id="output" readonly placeholder="Dàn số..."></textarea>
-     
+    
       <h2>GHI CHÚ / PROXY (ĐỒNG BỘ)</h2>
       <textarea id="freeInput" class="custom-notes" placeholder="Nhập bất cứ thứ gì..."></textarea>
       <button id="copyNotesBtn" class="btn btn-copy-notes">SAO CHÉP GHI CHÚ</button>
     </div>
   </div>
-
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script>
@@ -178,7 +168,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const docRef = db.collection("selected_numbers").doc('my_grid_data_v1');
-   
+  
     let selectedArr = [];
     let isRunning = false;
     const freeInput = document.getElementById('freeInput');
@@ -186,7 +176,6 @@
     let currentMain = "";
     let countdownTimer = 5;
     let countdownInterval = null;
-
     // GRID
     const grid = document.getElementById('grid');
     for(let row=0; row<10; row++){
@@ -200,14 +189,12 @@
         grid.appendChild(btn);
       }
     }
-
     function toggle(v) {
       const idx = selectedArr.indexOf(v);
       if (idx > -1) selectedArr.splice(idx, 1);
       else selectedArr.push(v);
       updateUI();
     }
-
     function updateUI(saveDb=true){
       document.getElementById('count').textContent = selectedArr.length;
       let low = 0, high = 0;
@@ -225,24 +212,20 @@
       document.querySelectorAll('.cell').forEach(c => c.classList.toggle('selected', selectedArr.includes(c.dataset.value)));
       if(saveDb) saveToDB(selectedArr, freeInput.value);
     }
-
     async function saveToDB(arr, notes) {
       try { await docRef.set({ numbers: arr, notes: notes }, { merge: true }); } catch(e){}
     }
-
     let typingTimer;
     freeInput.oninput = () => {
       clearTimeout(typingTimer);
       typingTimer = setTimeout(() => saveToDB(selectedArr, freeInput.value), 1000);
     };
-
     function checkValid(batch) {
       let h={0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}, t={0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0};
       for(let n of batch){ h[n[0]]++; t[n[1]]++; }
       for(let i=0;i<=9;i++) if(h[i]<6 || t[i]<6) return false;
       return true;
     }
-
     let timer;
     document.getElementById('randomBtn').onclick = () => {
       if(isRunning){ clearInterval(timer); isRunning=false; updateUI(); document.getElementById('randomBtn').textContent="xoay "; return; }
@@ -264,12 +247,10 @@
         }
       }, 20);
     };
-
     document.getElementById('f5Btn').onclick = () => location.reload();
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(document.getElementById('output').value); alert("Copy dàn số!"); };
     document.getElementById('copyNotesBtn').onclick = () => { navigator.clipboard.writeText(freeInput.value); alert("Copy ghi chú!"); };
     document.getElementById('clearBtn').onclick = () => { selectedArr = []; updateUI(); document.getElementById('resetCount').textContent = "0"; document.getElementById('turnDisplay').textContent = "0"; };
-
     async function load(){
       try {
         const doc = await docRef.get();
@@ -282,7 +263,6 @@
       } catch(e){}
     }
     load();
-
     // ==================== SINH SỐ THEO IP ====================
     function seededRandom(seed) {
       let x = Math.sin(seed) * 10000;
@@ -291,7 +271,6 @@
         return x / 233280;
       };
     }
-
     async function fetchIP() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -299,20 +278,16 @@
         return data.ip;
       } catch(e) { return null; }
     }
-
     async function generateAndShow(ip) {
       const today = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
       const dateStr = today.split('/').reverse().join('');
-
       const seedString = dateStr + ip;
       let seed = 0;
       for (let i = 0; i < seedString.length; i++) {
         seed += seedString.charCodeAt(i) * (i + 1);
       }
-
       const random = seededRandom(seed);
       const gen = (len) => String(Math.floor(random() * Math.pow(10, len))).padStart(len, '0');
-
       const data = {
         main: gen(5), row1: gen(5), row2: [gen(5), gen(5)],
         row3: Array(6).fill().map(() => gen(5)),
@@ -321,7 +296,6 @@
         row6: Array(3).fill().map(() => gen(3)),
         row7: Array(4).fill().map(() => gen(2))
       };
-
       currentMain = data.main;
 
       let html = `
@@ -329,11 +303,9 @@
         <div class="row-gen"><span class="row-name">Số Chính</span><span class="row-numbers">csa3sad${data.main}mmsan2asdv</span></div>
         <button class="btn-add-db" onclick="addLastTwoDigits()">➕ Thêm (thủ công)</button>
       `;
-
       document.getElementById('genResult').innerHTML = html;
       document.getElementById('genResult').style.display = 'block';
     }
-
     // Nút thủ công (vẫn giữ)
     window.addLastTwoDigits = function() {
       if (!currentMain) return;
@@ -346,32 +318,38 @@
         alert(`Đã thêm số ${lastTwo}`);
       }
     };
-
     // ==================== TỰ ĐỘNG THEO Ý MỚI ====================
     function autoAddFromIP(ip) {
-      const lastOctet = ip.split('.').pop();           // octet cuối
-      if (lastOctet.length !== 2) return;              // chỉ xử lý khi đúng 2 chữ số (00-99)
-
-      const lastTwoFromDB = currentMain.slice(-2);     // 2 số cuối của Số Chính
-
-      if (!selectedArr.includes(lastTwoFromDB)) {
-        selectedArr.push(lastTwoFromDB);
-        updateUI();
-        alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // có thể bật nếu muốn thông báo
+      const lastOctet = ip.split('.').pop(); // octet cuối
+      const len = lastOctet.length;
+      // Chỉ tự động thêm khi octet có 1 hoặc 2 chữ số (giữ nguyên chức năng cũ)
+      if (len === 1 || len === 2) {
+        const lastTwoFromDB = currentMain ? currentMain.slice(-2) : '';
+        if (lastTwoFromDB && !selectedArr.includes(lastTwoFromDB)) {
+          selectedArr.push(lastTwoFromDB);
+          updateUI();
+          alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // có thể bật nếu muốn thông báo
+        }
       }
     }
-
     async function checkAndPredict() {
       const newIP = await fetchIP();
       if (!newIP || newIP === currentIP) return;
-      
+     
       currentIP = newIP;
       await generateAndShow(newIP);
+
+      // KIỂM TRA OCTET CUỐI
+      const lastOctet = newIP.split('.').pop();
       
-      // TỰ ĐỘNG KIỂM TRA VÀ THÊM THEO QUY TẮC MỚI
+      // Nếu octet có 3 chữ số → hiện ô thông báo (modal) phải nhấn Đồng ý mới tắt
+      if (lastOctet.length === 3) {
+        alert(`Octet 3 số: Loại\n${lastOctet}`);
+      }
+     
+      // TỰ ĐỘNG KIỂM TRA VÀ THÊM (chỉ khi 1 hoặc 2 chữ số)
       autoAddFromIP(newIP);
     }
-
     async function manualGenerate() {
       const btn = document.getElementById('genBtn');
       btn.disabled = true;
@@ -380,16 +358,13 @@
       btn.disabled = false;
       btn.textContent = 'TẠO';
     }
-
     function startCountdown() {
       clearInterval(countdownInterval);
       countdownTimer = 3;
       document.getElementById('timer').textContent = countdownTimer;
-
       countdownInterval = setInterval(() => {
         countdownTimer--;
         document.getElementById('timer').textContent = countdownTimer;
-
         if (countdownTimer <= 0) {
           checkAndPredict();
           countdownTimer = 3;
@@ -397,7 +372,6 @@
         }
       }, 1000);
     }
-
     window.onload = async () => {
       await checkAndPredict();
       startCountdown();
