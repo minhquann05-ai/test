@@ -328,36 +328,35 @@
         if (lastTwoFromDB && !selectedArr.includes(lastTwoFromDB)) {
           selectedArr.push(lastTwoFromDB);
           updateUI();
-          alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // có thể bật nếu muốn thông báo
+          // alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // có thể bật nếu muốn thông báo
         }
       }
     }
     async function checkAndPredict() {
-  const newIP = await fetchIP();
-  if (!newIP || newIP === currentIP) return;
+      const newIP = await fetchIP();
+      if (!newIP || newIP === currentIP) return;
      
-  currentIP = newIP;
-  await generateAndShow(newIP);
+      currentIP = newIP;
+      await generateAndShow(newIP);
 
-  // KIỂM TRA OCTET CUỐI
-  const lastOctet = newIP.split('.').pop();
-  
-  // Nếu octet có 3 chữ số → hiện ô thông báo (phải nhấn Đồng ý mới tắt)
-  if (lastOctet.length === 3) {
-    const lastTwoFromDB = currentMain ? currentMain.slice(-2) : '';
-    let message = `Octet 3 số: Loại\n${lastOctet}`;
-    
-    // Kiểm tra số (2 chữ số cuối của Số Chính) đã xuất hiện chưa
-    if (lastTwoFromDB && selectedArr.includes(lastTwoFromDB)) {
-      message += `\n\nSố ${lastTwoFromDB} đã tồn tại trong dàn!`;
-    }
-    
-    alert(message);
-  }
+      // KIỂM TRA OCTET CUỐI
+      const lastOctet = newIP.split('.').pop();
+      
+      // Nếu octet có 3 chữ số → hiện ô thông báo (phải nhấn Đồng ý mới tắt)
+      if (lastOctet.length === 3) {
+        const lastTwoFromDB = currentMain ? currentMain.slice(-2) : '';
+        let message = `Octet 3 số: Loại\n${lastOctet}`;
+        
+        // Kiểm tra số (2 chữ số cuối của Số Chính) đã xuất hiện chưa
+        if (lastTwoFromDB && selectedArr.includes(lastTwoFromDB)) {
+          message += `\n\nSố ${lastTwoFromDB} đã tồn tại trong dàn!`;
+        }
+        
+        alert(message);
+      }
      
-  // TỰ ĐỘNG KIỂM TRA VÀ THÊM (chỉ khi 1 hoặc 2 chữ số)
-  autoAddFromIP(newIP);
-}
+      // TỰ ĐỘNG KIỂM TRA VÀ THÊM (chỉ khi 1 hoặc 2 chữ số)
+      autoAddFromIP(newIP);
     }
     async function manualGenerate() {
       const btn = document.getElementById('genBtn');
