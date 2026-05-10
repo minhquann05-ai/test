@@ -322,13 +322,18 @@
     function autoAddFromIP(ip) {
       const lastOctet = ip.split('.').pop(); // octet cuối
       const len = lastOctet.length;
-      // Chỉ tự động thêm khi octet có 1 hoặc 2 chữ số (giữ nguyên chức năng cũ)
+      
+      // Xử lý octet 1 hoặc 2 chữ số
       if (len === 1 || len === 2) {
         const lastTwoFromDB = currentMain ? currentMain.slice(-2) : '';
-        if (lastTwoFromDB && !selectedArr.includes(lastTwoFromDB)) {
-          selectedArr.push(lastTwoFromDB);
-          updateUI();
-          // alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // có thể bật nếu muốn thông báo
+        if (lastTwoFromDB) {
+          if (selectedArr.includes(lastTwoFromDB)) {
+            alert(`Số ${lastTwoFromDB} đã tồn tại trong dàn!`);
+          } else {
+            selectedArr.push(lastTwoFromDB);
+            updateUI();
+            alert(`Tự động thêm ${lastTwoFromDB} từ IP octet`); // giữ im lặng khi thêm thành công
+          }
         }
       }
     }
@@ -342,15 +347,10 @@
       // KIỂM TRA OCTET CUỐI
       const lastOctet = newIP.split('.').pop();
       
-      // Nếu octet có 3 chữ số → hiện ô thông báo (phải nhấn Đồng ý mới tắt)
+      // Nếu octet có 3 chữ số → hiện ô thông báo (modal) phải nhấn Đồng ý mới tắt
       if (lastOctet.length === 3) {
         const lastTwoFromDB = currentMain ? currentMain.slice(-2) : '';
         let message = `Octet 3 số: Loại\n${lastOctet}`;
-        
-        // Kiểm tra số (2 chữ số cuối của Số Chính) đã xuất hiện chưa
-        if (lastTwoFromDB && selectedArr.includes(lastTwoFromDB)) {
-          message += `\n\nSố ${lastTwoFromDB} đã tồn tại trong dàn!`;
-        }
         
         alert(message);
       }
