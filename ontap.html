@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ôn Tập Trắc Nghiệm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .question-card {
+            transition: all 0.3s ease;
+        }
+        
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen pb-12">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl">📚</div>
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800">Ôn Tập Trắc Nghiệm</h1>
+                    <p class="text-slate-500">Tất cả câu hỏi trên một trang • Đảo cả câu hỏi & đáp án</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="resetToOriginalOrder()" 
+                        class="flex items-center gap-2 px-6 py-3 bg-white hover:bg-slate-100 border border-slate-200 rounded-2xl font-medium text-slate-700 transition-all">
+                    🔄 Thứ tự gốc
+                </button>
+                
+                <button onclick="restartWithShuffle()" 
+                        class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-medium transition-all">
+                    🔀 Làm lại (đảo hết)
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="sticky top-0 bg-white/95 backdrop-blur-md z-50 border-b mb-6 py-4 px-6 rounded-3xl shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <div>
+                    <span class="text-slate-500 text-sm">Đã trả lời</span>
+                    <span id="answered-count" class="text-3xl font-bold text-slate-800">0</span>
+                    <span class="text-slate-400"> / </span>
+                    <span id="total-count" class="text-slate-500"></span>
+                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <div>
+                    <span class="text-emerald-500">Điểm</span>
+                    <span id="score-display" class="text-3xl font-bold text-emerald-600 ml-2">0</span>
+                </div>
+            </div>
+            <button onclick="submitQuiz()" 
+                    class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl shadow-lg transition-all active:scale-95">
+                📤 Nộp bài & Xem kết quả
+            </button>
+        </div>
+
+        <!-- DANH SÁCH CÂU HỎI -->
+        <div id="questions-container" class="space-y-8">
+            <!-- JS render ở đây -->
+        </div>
+
+    </div>
+
+    <script>
+        // ====================== DỮ LIỆU CÂU HỎI (bạn tự thêm ở đây) ======================
+        let originalQuestions = [
+    {
+        question: "Câu 1. Hai GPIO đều cấu hình output, một HIGH và một LOW nối trực tiếp với nhau sẽ gây hiện tượng gì?",
+        options: [
+            "A. Không có gì xảy ra vì hai chân output cân bằng điện áp",
+            "B. Dòng điện lớn chảy qua cả hai chân GPIO, có thể gây hỏng chân hoặc chip",
+            "C. Điện áp đo được sẽ là 2.5V",
+            "D. Tạo ra tín hiệu PWM tự động"
+        ],
+        correctIndex: 1,
+        explanation: "Hai chân output đều drive mạnh (một push HIGH, một push LOW) → tạo thành short-circuit trực tiếp giữa Vcc và GND qua hai transistor output. Dòng điện lớn (có thể vài chục mA đến trăm mA) chảy qua, dễ gây quá nhiệt và hỏng chân GPIO hoặc toàn bộ vi điều khiển."
+    },
+    {
+        question: "Câu 2. Floating input thường gây ra hậu quả nào trong hệ thống số?",
+        options: [
+            "A. Input luôn đọc được mức LOW ổn định",
+            "B. Input đọc giá trị ngẫu nhiên, dễ gây nhiễu và hoạt động không ổn định",
+            "C. Tăng tiêu thụ dòng của chip",
+            "D. Tự động chuyển sang chế độ High-Z"
+        ],
+        correctIndex: 1,
+        explanation: "Chân input floating (không được kéo lên/kéo xuống) không có điện áp tham chiếu cố định. Nhiễu điện từ, điện dung ký sinh hoặc điện trường xung quanh sẽ làm điện áp trên chân dao động ngẫu nhiên → vi điều khiển đọc được 0 hoặc 1 một cách không xác định, dẫn đến lỗi logic, reset không mong muốn hoặc hoạt động không ổn định."
+    },
+    {
+        question: "Câu 3. ADC 10-bit với V_ref = 5V có độ phân giải gần đúng bao nhiêu?",
+        options: [
+            "A. 5 mV",
+            "B. 4.88 mV",
+            "C. 10 mV",
+            "D. 2.5 mV"
+        ],
+        correctIndex: 1,
+        explanation: "Độ phân giải của ADC = V_ref / 2^10 = 5 / 1024 ≈ 0.0048828 V ≈ 4.88 mV. Mỗi bước nhảy của ADC tương ứng với 4.88 mV."
+    },
+    {
+        question: "Câu 4. PWM duty cycle 20% ở mức 5V tạo ra điện áp trung bình gần đúng bao nhiêu?",
+        options: [
+            "A. 2V",
+            "B. 1V",
+            "C. 4V",
+            "D. 0.2V"
+        ],
+        correctIndex: 1,
+        explanation: "Điện áp trung bình của PWM = Duty cycle × Vpeak = 0.2 × 5 V = 1 V. Đây là giá trị DC tương đương mà một bộ lọc RC sẽ đo được."
+    },
+    {
+        question: "Câu 5. Sampling thấp hơn định lý Nyquist sẽ gây ra hiện tượng gì?",
+        options: [
+            "A. Tín hiệu bị mất hoàn toàn",
+            "B. Hiện tượng aliasing (tín hiệu tần số cao giả dạng thành tần số thấp)",
+            "C. Tăng độ chính xác của ADC",
+            "D. Không ảnh hưởng gì đến tín hiệu"
+        ],
+        correctIndex: 1,
+        explanation: "Định lý Nyquist yêu cầu tần số lấy mẫu fs ≥ 2 × fmax. Nếu fs < 2fmax, các tần số cao sẽ bị gập xuống (alias) thành tần số thấp giả, gây méo tín hiệu không thể khôi phục."
+    },
+    {
+        question: "Câu 6. Trạng thái High-Z chủ yếu được sử dụng để giải quyết vấn đề nào?",
+        options: [
+            "A. Tiết kiệm điện năng",
+            "B. Tránh xung đột bus (bus contention) khi nhiều thiết bị nối chung một đường dữ liệu",
+            "C. Tăng tốc độ truyền dữ liệu",
+            "D. Tạo ra tín hiệu analog"
+        ],
+        correctIndex: 1,
+        explanation: "High-Z (tri-state) làm chân GPIO như “không nối” (điện trở rất cao), cho phép thiết bị khác drive bus mà không bị xung đột điện. Đây là nguyên tắc cốt lõi của bus đa thiết bị (I2C, SPI, UART shared, v.v.)."
+    },
+    {
+        question: "Câu 7. ADC 10-bit đọc giá trị 768 với V_ref = 5V thì điện áp đầu vào gần đúng là bao nhiêu?",
+        options: [
+            "A. 3V",
+            "B. 3.75V",
+            "C. 4V",
+            "D. 2.5V"
+        ],
+        correctIndex: 1,
+        explanation: "Điện áp = (Giá trị ADC / 1024) × V_ref = (768 / 1024) × 5 = 0.75 × 5 = 3.75 V."
+    },
+    {
+        question: "Câu 8. Breadboard thường không phù hợp với loại ứng dụng nào?",
+        options: [
+            "A. Prototype mạch đơn giản, tần số thấp",
+            "B. Mạch tần số cao (RF, >10 MHz) hoặc tốc độ cao",
+            "C. Kiểm tra logic cơ bản",
+            "D. Học lập trình nhúng"
+        ],
+        correctIndex: 1,
+        explanation: "Breadboard có độ dài dây dẫn dài, điện dung và điện cảm ký sinh lớn, tiếp xúc không ổn định → gây nhiễu nghiêm trọng ở tần số cao, làm méo tín hiệu clock, RF, hoặc các giao thức tốc độ cao (USB, Ethernet, SPI >20 MHz…)."
+    },
+    {
+        question: "Câu 9. Một GPIO output đang ở mức HIGH (5V). Nếu nối trực tiếp với một GPIO khác cấu hình output LOW, điều gì xảy ra?",
+        options: [
+            "A. Điện áp đo được giữa hai chân là 0V",
+            "B. Xảy ra short-circuit, dòng điện lớn chảy qua hai chân GPIO",
+            "C. Hai chân tự động chuyển sang High-Z",
+            "D. Vi điều khiển tự reset an toàn"
+        ],
+        correctIndex: 1,
+        explanation: "Hai output push-pull drive ngược nhau (HIGH vs LOW) → tạo short-circuit trực tiếp, dòng điện rất lớn, dễ gây hỏng chân GPIO hoặc chip (giống Câu 1)."
+    },
+    {
+        question: "Câu 10. Một chân input ở trạng thái floating có thể gây hiện tượng gì trong hệ thống số?",
+        options: [
+            "A. Input luôn đọc được mức HIGH ổn định",
+            "B. Input đọc giá trị ngẫu nhiên, gây nhiễu và hoạt động không xác định",
+            "C. Tiêu thụ dòng rất thấp",
+            "D. Tự động kéo xuống GND"
+        ],
+        correctIndex: 1,
+        explanation: "Chân floating không có điện trở kéo lên/kéo xuống → điện áp bị nhiễu từ môi trường (điện trường, tiếp xúc tay, điện dung ký sinh) làm thay đổi ngẫu nhiên giữa 0 và 1, dẫn đến chương trình chạy sai hoặc hoạt động không ổn định (giống Câu 2)."
+    },
+    {
+        question: "Câu 11. Một LED cần 20mA, nguồn 5V, LED rơi áp 2V. Giá trị điện trở phù hợp nhất là bao nhiêu?",
+        options: [
+            "100Ω",
+            "150Ω",
+            "220Ω",
+            "330Ω"
+        ],
+        correctIndex: 1,
+        explanation: "Điện áp rơi trên điện trở là VR = 5V - 2V = 3V. Dòng điện qua LED là 20mA = 0.02A. Áp dụng công thức Ohm: R = VR / I = 3 / 0.02 = 150Ω. Giá trị này đảm bảo LED sáng ở dòng định mức mà không bị cháy hoặc quá mờ."
+    },
+    {
+        question: "Câu 12. Nếu dùng điện trở 100Ω cho LED 5V có điện áp rơi 2V, dòng điện qua LED xấp xỉ bao nhiêu?",
+        options: [
+            "10mA",
+            "20mA",
+            "30mA",
+            "50mA"
+        ],
+        correctIndex: 2,
+        explanation: "Điện áp rơi trên điện trở là VR = 5V - 2V = 3V. Dòng điện qua LED: I = VR / R = 3 / 100 = 0.03A = 30mA. Lưu ý: 30mA hơi cao hơn dòng định mức thông thường của LED (có thể làm LED nóng hơn nhưng vẫn hoạt động tạm thời)."
+    },
+    {
+        question: "Câu 13. Breadboard không phù hợp nhất với loại ứng dụng nào?",
+        options: [
+            "Thí nghiệm prototype",
+            "Học tập và phát triển nhanh",
+            "Mạch tạm thời",
+            "Ứng dụng sản xuất hàng loạt, môi trường công nghiệp"
+        ],
+        correctIndex: 3,
+        explanation: "Breadboard chỉ dùng để prototype và thí nghiệm tạm thời vì các chân tiếp xúc lỏng lẻo, dễ bị rung, oxy hóa và tạo nhiễu. Trong sản xuất hàng loạt hoặc môi trường công nghiệp (rung lắc, độ ẩm cao), mạch phải hàn cố định trên PCB để đảm bảo độ tin cậy và ổn định lâu dài."
+    },
+    {
+        question: "Câu 14. Nếu không có điện trở pull-up hoặc pull-down, nút nhấn sẽ gây trạng thái gì tại input?",
+        options: [
+            "Luôn HIGH",
+            "Luôn LOW",
+            "Trạng thái không xác định (floating)",
+            "Ngắn mạch"
+        ],
+        correctIndex: 2,
+        explanation: "Khi không có pull-up/pull-down, chân input của vi điều khiển “floating” (không kết nối với mức logic nào). Nút nhấn mở → input bị nhiễu điện từ, đọc giá trị ngẫu nhiên (có thể HIGH hoặc LOW không ổn định), dẫn đến chương trình chạy sai."
+    },
+    {
+        question: "Câu 15. PWM thường được sử dụng để giải quyết bài toán nào trong hệ thống nhúng?",
+        options: [
+            "Tăng tốc độ xử lý CPU",
+            "Điều khiển analog (điều chỉnh độ sáng LED, tốc độ motor) từ output digital",
+            "Chuyển đổi analog sang digital",
+            "Lưu trữ dữ liệu"
+        ],
+        correctIndex: 1,
+        explanation: "PWM (Pulse Width Modulation) tạo ra điện áp trung bình tương đương tín hiệu analog từ chân digital. Nó giải quyết bài toán điều khiển công suất (độ sáng LED, tốc độ motor DC, servo…) mà không cần DAC ngoài, rất phổ biến trong Arduino, ESP32, STM32."
+    },
+    {
+        question: "Câu 16. Duty cycle 25% ở mức 5V tạo ra điện áp trung bình xấp xỉ bao nhiêu?",
+        options: [
+            "1.25V",
+            "2.5V",
+            "3.75V",
+            "5V"
+        ],
+        correctIndex: 0,
+        explanation: "Điện áp trung bình của PWM: Vavg = Duty × Vpeak = 0.25 × 5V = 1.25V. Đây là nguyên lý PWM tạo tín hiệu analog tương đương."
+    },
+    {
+        question: "Câu 17. Với ADC 10-bit và Vref = 5V, độ phân giải điện áp trên mỗi bước là bao nhiêu?",
+        options: [
+            "0.5V",
+            "1mV",
+            "Khoảng 4.88mV",
+            "10mV"
+        ],
+        correctIndex: 2,
+        explanation: "ADC 10-bit có 1024 mức (0 đến 1023). Độ phân giải: Vref / 2^10 = 5 / 1024 ≈ 4.88mV mỗi bước. Giá trị đọc càng chính xác khi độ phân giải càng nhỏ."
+    },
+    {
+        question: "Câu 18. ADC đọc được giá trị 512 với Vref = 5V thì điện áp input gần đúng là bao nhiêu?",
+        options: [
+            "1V",
+            "2.5V",
+            "3V",
+            "4V"
+        ],
+        correctIndex: 1,
+        explanation: "Công thức: Vin = (ADCvalue / 1024) × Vref = (512 / 1024) × 5 = 2.5V. Giá trị 512 chính là giữa thang đo (nửa phạm vi)."
+    },
+    {
+        question: "Câu 19. Một cảm biến có sai số ±2% khi đo giá trị 100 đơn vị thì sai số tuyệt đối là bao nhiêu?",
+        options: [
+            "±0.2",
+            "±2",
+            "±20",
+            "±200"
+        ],
+        correctIndex: 1,
+        explanation: "Sai số tuyệt đối = sai số tương đối × giá trị đo = 2% × 100 = 0.02 × 100 = 2 đơn vị. Do đó sai số là ±2 đơn vị."
+    },
+    {
+        question: "Câu 20. Nếu tần số sampling quá thấp so với tín hiệu thực, hiện tượng nào dễ xảy ra nhất?",
+        options: [
+            "Over-sampling",
+            "Hiện tượng gập tần (aliasing)",
+            "Quantization error",
+            "Noise cao hơn"
+        ],
+        correctIndex: 1,
+        explanation: "Theo định lý Nyquist, tần số lấy mẫu fs phải ≥ 2 × tần số cao nhất của tín hiệu. Nếu fs quá thấp, tín hiệu cao tần sẽ “gập” thành tần số thấp giả tạo (aliasing), làm méo dạng tín hiệu thu được."
+    },
+    {
+        question: "Câu 21. Tín hiệu digital chuẩn thông thường có bao nhiêu trạng thái logic cơ bản?",
+        options: [
+            "A. 2",
+            "B. 3",
+            "C. 4",
+            "D. 1"
+        ],
+        correctIndex: 0,
+        explanation: "Tín hiệu digital chuẩn (logic TTL/CMOS) chỉ có 2 trạng thái logic cơ bản là Low (0) và High (1). Trạng thái High-Z là trạng thái thứ 3 nhưng chỉ xuất hiện ở đầu ra tri-state, không phải trạng thái logic cơ bản của tín hiệu."
+    },
+    {
+        question: "Câu 22. Trạng thái High-Z trong bus số có vai trò quan trọng nhất là gì?",
+        options: [
+            "A. Tăng tốc độ truyền dữ liệu",
+            "B. Giảm tiêu thụ điện năng",
+            "C. Cho phép nhiều thiết bị chia sẻ bus mà không gây xung đột",
+            "D. Tăng khả năng chống nhiễu"
+        ],
+        correctIndex: 2,
+        explanation: "High-Z (high impedance) làm đầu ra của driver “ngắt” khỏi bus (như ngắt mạch), cho phép nhiều thiết bị kết nối chung một bus mà không gây short-circuit khi các thiết bị khác đang truyền. Đây là nguyên lý cốt lõi của bus ba trạng thái (tri-state bus)."
+    },
+    {
+        question: "Câu 23. UART có baud rate 9600bps thì thời gian truyền của 1 bit gần đúng là bao nhiêu?",
+        options: [
+            "A. 1 ms",
+            "B. 104 μs",
+            "C. 960 μs",
+            "D. 10 μs"
+        ],
+        correctIndex: 1,
+        explanation: "Baud rate 9600 bps nghĩa là truyền 9600 bit/giây → thời gian 1 bit = 1/9600 ≈ 0,000104167 giây = 104,17 μs (gần đúng 104 μs)."
+    },
+    {
+        question: "Câu 24. UART frame gồm 1 start bit, 8 data bit và 1 stop bit sẽ có tổng cộng bao nhiêu bit?",
+        options: [
+            "A. 8 bit",
+            "B. 9 bit",
+            "C. 10 bit",
+            "D. 11 bit"
+        ],
+        correctIndex: 2,
+        explanation: "Tổng số bit trong frame = 1 start + 8 data + 1 stop = 10 bit (không tính parity bit trong câu hỏi này)."
+    },
+    {
+        question: "Câu 25. Baud rate mismatch trong UART thường gây ra hiện tượng gì?",
+        options: [
+            "A. Tăng tốc độ truyền",
+            "B. Dữ liệu bị nhận sai (garbled data) hoặc framing error",
+            "C. Giảm nhiễu",
+            "D. Tăng thời gian truyền 1 byte"
+        ],
+        correctIndex: 1,
+        explanation: "Khi baud rate giữa TX và RX khác nhau, thời điểm lấy mẫu bit bị lệch dần → bit start, data, stop bị nhận sai, thường biểu hiện bằng dữ liệu “rác” hoặc lỗi framing."
+    },
+    {
+        question: "Câu 26. RS485 có khả năng chống nhiễu tốt chủ yếu nhờ kỹ thuật nào?",
+        options: [
+            "A. Tăng điện áp truyền",
+            "B. Tín hiệu vi sai (differential signaling)",
+            "C. Sử dụng nhiều stop bit",
+            "D. Tăng baud rate"
+        ],
+        correctIndex: 1,
+        explanation: "RS485 dùng cặp dây vi sai (A và B), nhiễu lan truyền chung-mode sẽ bị triệt tiêu tại receiver, nên khả năng chống nhiễu rất cao ở khoảng cách xa và môi trường công nghiệp."
+    },
+    {
+        question: "Câu 27. Half-duplex nghĩa là gì trong truyền thông dữ liệu?",
+        options: [
+            "A. Truyền và nhận đồng thời (cả 2 chiều cùng lúc)",
+            "B. Chỉ truyền một chiều",
+            "C. Truyền hoặc nhận nhưng không đồng thời (một hướng tại một thời điểm)",
+            "D. Không cần dây clock"
+        ],
+        correctIndex: 2,
+        explanation: "Half-duplex cho phép truyền 2 chiều nhưng chỉ theo 1 hướng tại một thời điểm (ví dụ RS485, RS422 half-duplex), phải chuyển đổi hướng truyền/nhận."
+    },
+    {
+        question: "Câu 28. CRC trong Modbus được sử dụng với mục đích gì?",
+        options: [
+            "A. Tăng tốc độ truyền",
+            "B. Kiểm tra lỗi và đảm bảo tính toàn vẹn dữ liệu",
+            "C. Đồng bộ baud rate",
+            "D. Xác định địa chỉ slave"
+        ],
+        correctIndex: 1,
+        explanation: "CRC (Cyclic Redundancy Check) là mã kiểm tra lỗi được thêm vào cuối frame Modbus. Receiver tính lại CRC và so sánh để phát hiện lỗi truyền."
+    },
+    {
+        question: "Câu 29. Khoảng thời gian 3.5 character time trong Modbus RTU dùng để làm gì?",
+        options: [
+            "A. Đồng bộ baud rate",
+            "B. Phân cách giữa các frame (silent interval – đánh dấu kết thúc frame)",
+            "C. Truyền dữ liệu CRC",
+            "D. Kiểm tra parity"
+        ],
+        correctIndex: 1,
+        explanation: "Trong Modbus RTU, 3,5 character time là khoảng im lặng tối thiểu giữa 2 frame. Nếu receiver thấy khoảng im lặng ≥ 3,5 character time thì coi đó là kết thúc frame và bắt đầu xử lý frame mới."
+    },
+    {
+        question: "Câu 30. Vì sao SPI thường có tốc độ cao hơn UART?",
+        options: [
+            "A. SPI dùng ít dây hơn",
+            "B. SPI là giao thức đồng bộ có clock riêng, không có overhead start/stop bit và có thể clock rất cao",
+            "C. SPI chỉ truyền 1 bit mỗi lần",
+            "D. SPI không cần baud rate"
+        ],
+        correctIndex: 1,
+        explanation: "SPI là synchronous (có đường clock riêng), không cần start bit, stop bit, parity; master có thể đẩy clock lên hàng MHz hoặc chục MHz nên tốc độ tổng thể cao hơn nhiều so với UART (asynchronous, có overhead bit và baud rate bị giới hạn bởi độ chính xác clock)."
+    },
+    {
+        question: "Câu 31. Trong giao thức I2C, điều kiện START xảy ra khi nào?",
+        options: [
+            "A. Khi cả SDA và SCL đều chuyển từ cao xuống thấp cùng lúc.",
+            "B. Khi SCL chuyển từ cao xuống thấp trong khi SDA đang ở mức cao.",
+            "C. Khi SDA chuyển từ cao xuống thấp trong khi SCL đang ở mức cao.",
+            "D. Khi cả SDA và SCL đều ở mức thấp liên tục trong ít nhất 2 chu kỳ clock."
+        ],
+        correctIndex: 2,
+        explanation: "Theo chuẩn I2C, điều kiện START được định nghĩa chính xác là sự chuyển tiếp của đường dữ liệu SDA từ HIGH (1) xuống LOW (0) trong khi đường clock SCL vẫn đang ở mức HIGH (1). Đây là tín hiệu báo đầu khung truyền dữ liệu."
+    },
+    {
+        question: "Câu 32. Trong SPI, tín hiệu nào dùng để chọn slave cụ thể?",
+        options: [
+            "A. Tín hiệu MOSI (Master Out Slave In).",
+            "B. Tín hiệu MISO (Master In Slave Out).",
+            "C. Tín hiệu SCK (Serial Clock).",
+            "D. Tín hiệu SS/CS (Slave Select/Chip Select)."
+        ],
+        correctIndex: 3,
+        explanation: "Tín hiệu SS/CS (thường active LOW) do Master điều khiển để chọn và kích hoạt một Slave cụ thể trên bus SPI. Khi SS/CS = 0, Slave đó mới tham gia giao tiếp; các Slave khác bị vô hiệu hóa."
+    },
+    {
+        question: "Câu 33. UART khác SPI ở đặc điểm nào sau đây?",
+        options: [
+            "A. UART sử dụng 4 dây (MOSI, MISO, SCK, SS) trong khi SPI chỉ dùng 2 dây.",
+            "B. UART là giao thức đồng bộ, SPI là giao thức không đồng bộ.",
+            "C. UART không yêu cầu tín hiệu clock riêng biệt, SPI yêu cầu clock (SCK).",
+            "D. UART chỉ hoạt động ở chế độ half-duplex, SPI luôn full-duplex."
+        ],
+        correctIndex: 2,
+        explanation: "UART là giao thức không đồng bộ (asynchronous) nên không cần đường clock riêng (chỉ dùng TX/RX). SPI là giao thức đồng bộ (synchronous) nên luôn có tín hiệu clock SCK do Master sinh ra."
+    },
+    {
+        question: "Câu 34. Trong I2C, mục đích của điện trở pull-up là gì?",
+        options: [
+            "A. Tăng tốc độ truyền dữ liệu lên gấp đôi.",
+            "B. Bảo vệ thiết bị khỏi dòng điện ngược.",
+            "C. Giữ đường SDA và SCL ở mức HIGH khi không có thiết bị nào kéo LOW.",
+            "D. Chuyển đổi mức logic từ 3.3V sang 5V."
+        ],
+        correctIndex: 2,
+        explanation: "I2C sử dụng topology open-drain/open-collector, nên cần điện trở pull-up trên SDA và SCL để duy trì mức logic HIGH khi không có thiết bị nào kéo đường xuống LOW. Không có pull-up thì bus sẽ không hoạt động đúng."
+    },
+    {
+        question: "Câu 35. Nếu SPI hoạt động mode full-duplex, điều gì xảy ra?",
+        options: [
+            "A. Master chỉ truyền dữ liệu, Slave không thể trả lời.",
+            "B. Dữ liệu được truyền và nhận đồng thời trên cùng một đường dây.",
+            "C. Master truyền trên MOSI và nhận trên MISO cùng một lúc trong cùng chu kỳ clock.",
+            "D. Tốc độ truyền giảm một nửa so với half-duplex."
+        ],
+        correctIndex: 2,
+        explanation: "Trong chế độ full-duplex của SPI, Master vừa gửi bit trên MOSI vừa nhận bit trên MISO trong cùng một chu kỳ clock. Hai đường dữ liệu độc lập nên truyền và nhận xảy ra song song."
+    },
+    {
+        question: "Câu 36. Trong UART frame chuẩn, thành phần nào báo bắt đầu truyền dữ liệu?",
+        options: [
+            "A. Bit Parity.",
+            "B. Bit Stop.",
+            "C. Bit Start.",
+            "D. Byte dữ liệu đầu tiên."
+        ],
+        correctIndex: 2,
+        explanation: "Bit Start (luôn là mức LOW) là thành phần đầu tiên của frame UART, báo cho Receiver biết khung dữ liệu mới bắt đầu truyền. Sau bit Start là 5-9 bit dữ liệu, bit parity (tùy chọn) và bit Stop."
+    },
+    {
+        question: "Câu 37. Một bus I2C có nhiều thiết bị nhưng địa chỉ bị trùng nhau sẽ gây hiện tượng gì?",
+        options: [
+            "A. Bus hoạt động bình thường vì I2C tự động phân giải địa chỉ.",
+            "B. Master không thể giao tiếp với bất kỳ thiết bị nào.",
+            "C. Xung đột ACK, dữ liệu bị lỗi hoặc bus bị treo (bus contention).",
+            "D. Tốc độ truyền tự động giảm xuống 10 kHz."
+        ],
+        correctIndex: 2,
+        explanation: "Mỗi thiết bị trên I2C phải có địa chỉ 7-bit hoặc 10-bit duy nhất. Nếu hai thiết bị có cùng địa chỉ, cả hai sẽ cùng kéo SDA xuống LOW trong bit ACK → xung đột bus, gây lỗi truyền hoặc bus bị kẹt."
+    },
+    {
+        question: "Câu 38. Trong SPI, nếu master tạo clock 1 MHz thì ý nghĩa là gì?",
+        options: [
+            "A. Mỗi frame dữ liệu mất đúng 1 µs.",
+            "B. Tốc độ truyền dữ liệu tối đa là 1 Mbit/s (1 bit mỗi chu kỳ clock).",
+            "C. Slave chỉ có thể trả lời sau 1 µs.",
+            "D. Clock frequency không ảnh hưởng đến tốc độ dữ liệu."
+        ],
+        correctIndex: 1,
+        explanation: "Trong SPI, mỗi chu kỳ clock truyền đúng 1 bit. Clock 1 MHz → bit rate = 1 Mbit/s (full-duplex). Đây là tốc độ lý thuyết tối đa khi Master sinh clock 1 MHz."
+    },
+    {
+        question: "Câu 39. QoS 2 trong MQTT đảm bảo cơ chế truyền dữ liệu như thế nào?",
+        options: [
+            "A. Gửi ít nhất một lần (At most once).",
+            "B. Gửi nhiều lần nếu cần (At least once).",
+            "C. Đảm bảo dữ liệu được truyền đúng một lần (Exactly once).",
+            "D. Không đảm bảo thứ tự gói tin."
+        ],
+        correctIndex: 2,
+        explanation: "QoS 2 (Exactly once) sử dụng cơ chế 4-way handshake (PUBREC, PUBREL, PUBCOMP) để đảm bảo message được gửi và nhận đúng một lần, không thừa, không thiếu, phù hợp cho các hệ thống yêu cầu độ tin cậy cao (ví dụ: thanh toán, điều khiển thiết bị)."
+    },
+    {
+        question: "Câu 40. MQTT sử dụng TCP chủ yếu nhằm mục đích gì?",
+        options: [
+            "A. Giảm độ trễ truyền dữ liệu.",
+            "B. Đảm bảo truyền dữ liệu đáng tin cậy, có thứ tự và kiểm soát lỗi.",
+            "C. Cho phép broadcast đến nhiều thiết bị cùng lúc.",
+            "D. Tiết kiệm băng thông hơn UDP."
+        ],
+        correctIndex: 1,
+        explanation: "MQTT chạy trên TCP để tận dụng các tính năng của TCP: truyền đáng tin cậy (acknowledgment, retransmission), thứ tự gói tin, kiểm soát dòng (flow control) và tránh mất mát dữ liệu – rất quan trọng cho giao thức publish/subscribe IoT."
+    },
+    {
+        question: "Câu 41. Điều gì xảy ra nếu MQTT Broker bị down trong hệ thống?",
+        options: [
+            "A. Hệ thống vẫn hoạt động bình thường nhờ cơ chế peer-to-peer",
+            "B. Publisher vẫn gửi được message nhưng subscriber không nhận được",
+            "C. Toàn bộ giao tiếp giữa publisher và subscriber bị gián đoạn hoàn toàn",
+            "D. Message được tự động lưu vào queue của client và gửi lại sau"
+        ],
+        correctIndex: 2,
+        explanation: "MQTT là mô hình publish/subscribe tập trung, Broker là thành phần trung tâm. Khi Broker down, publisher không thể publish và subscriber không thể nhận message nào cho đến khi Broker hoạt động trở lại."
+    },
+    {
+        question: "Câu 42. Topic “factory/+/temp” trong MQTT có thể match với topic nào?",
+        options: [
+            "A. factory/temp",
+            "B. factory/machine1/temp",
+            "C. factory/line1/sensor/temp",
+            "D. factory/machine1/temp/sensor"
+        ],
+        correctIndex: 1,
+        explanation: "Dấu `+` là single-level wildcard, chỉ match đúng một level bất kỳ. Topic “factory/machine1/temp” có đúng 3 level nên match được, còn các option còn lại có số level khác (1 level hoặc 4 level) nên không match."
+    },
+    {
+        question: "Câu 43. Retain message trong MQTT được dùng để làm gì?",
+        options: [
+            "A. Đảm bảo message không bị mất khi QoS = 0",
+            "B. Lưu message cuối cùng của topic để subscriber mới kết nối nhận ngay giá trị hiện tại",
+            "C. Tăng tốc độ truyền message giữa publisher và broker",
+            "D. Cho phép broker gửi lại message khi client reconnect"
+        ],
+        correctIndex: 1,
+        explanation: "Retain flag = 1 sẽ khiến Broker giữ lại message cuối cùng của topic. Khi có subscriber mới subscribe, Broker sẽ gửi ngay retain message đó để client nhận được trạng thái hiện tại (ví dụ: nhiệt độ hiện tại, trạng thái đèn…)."
+    },
+    {
+        question: "Câu 44. TLS trong MQTT có vai trò chính nào?",
+        options: [
+            "A. Tăng tốc độ truyền dữ liệu",
+            "B. Cung cấp mã hóa, xác thực và bảo mật kết nối (MQTTS)",
+            "C. Quản lý QoS của message",
+            "D. Cho phép broker lưu trữ message"
+        ],
+        correctIndex: 1,
+        explanation: "TLS (Transport Layer Security) được dùng trong MQTTS để mã hóa toàn bộ dữ liệu, xác thực server/client và đảm bảo tính toàn vẹn, ngăn chặn eavesdropping và man-in-the-middle attack."
+    },
+    {
+        question: "Câu 45. Nếu truyền 200 message mỗi giây, mỗi message 50 byte thì bandwidth gần đúng là bao nhiêu?",
+        options: [
+            "A. 10 kbps",
+            "B. 80 kbps",
+            "C. 1 Mbps",
+            "D. 400 kbps"
+        ],
+        correctIndex: 1,
+        explanation: "Tính toán: 200 msg/s × 50 byte/msg × 8 bit/byte = 80.000 bit/s = 80 kbps (chưa tính overhead TCP/IP/MQTT header, nhưng câu hỏi hỏi giá trị gần đúng cơ bản)."
+    },
+    {
+        question: "Câu 46. Khi một publisher gửi dữ liệu tới 20 subscriber thì outbound traffic của broker thay đổi như thế nào?",
+        options: [
+            "A. Outbound traffic không đổi vì broker chỉ forward 1 lần",
+            "B. Outbound traffic tăng gấp khoảng 20 lần (broker phải gửi riêng cho từng subscriber)",
+            "C. Outbound traffic giảm vì dùng multicast",
+            "D. Outbound traffic bằng inbound traffic"
+        ],
+        correctIndex: 1,
+        explanation: "MQTT broker nhận 1 message từ publisher (inbound), sau đó phải copy và gửi riêng từng bản sao đến từng subscriber (outbound ≈ 20×). Không hỗ trợ multicast ở tầng ứng dụng."
+    },
+    {
+        question: "Câu 47. Trong giao thức MQTT, thành phần nào chịu trách nhiệm nhận bản tin từ publisher và phân phối đến subscriber?",
+        options: [
+            "A. Publisher",
+            "B. Subscriber",
+            "C. MQTT Broker",
+            "D. Client library"
+        ],
+        correctIndex: 2,
+        explanation: "Broker là thành phần trung tâm, nhận message từ publisher trên topic và phân phối (fan-out) đến tất cả subscriber đã đăng ký topic đó."
+    },
+    {
+        question: "Câu 48. Một cảm biến nhiệt độ gửi dữ liệu mỗi 5 giây bằng giao thức MQTT với QoS = 0. Điều gì có thể xảy ra?",
+        options: [
+            "A. Tất cả message đều được đảm bảo đến subscriber",
+            "B. Một số message có thể bị mất nếu mạng không ổn định",
+            "C. Broker sẽ lưu message lại cho đến khi subscriber nhận được",
+            "D. Client sẽ tự động retry khi message không đến nơi"
+        ],
+        correctIndex: 1,
+        explanation: "QoS = 0 là “at most once” (fire-and-forget). Không có acknowledgment hay retry, nên message có thể bị mất do packet drop, network congestion… mà không được phát hiện."
+    },
+    {
+        question: "Câu 49. Địa chỉ IPv6 có độ dài bao nhiêu bit?",
+        options: [
+            "A. 32 bit",
+            "B. 64 bit",
+            "C. 128 bit",
+            "D. 256 bit"
+        ],
+        correctIndex: 2,
+        explanation: "IPv6 được thiết kế với không gian địa chỉ 128 bit (2¹²⁸ ≈ 3.4×10³⁸ địa chỉ), khắc phục hạn chế của IPv4 chỉ 32 bit."
+    },
+    {
+        question: "Câu 50. Trong hệ thống IoT, thiết bị nào sau đây hoạt động như actuator?",
+        options: [
+            "A. Cảm biến nhiệt độ (DS18B20)",
+            "B. Động cơ servo SG90",
+            "C. Cảm biến ánh sáng LDR",
+            "D. Camera IP"
+        ],
+        correctIndex: 1,
+        explanation: "Actuator là thiết bị thực hiện hành động vật lý theo lệnh từ controller (như servo quay, relay bật/tắt, motor chạy…). Cảm biến chỉ thu thập dữ liệu (sensor), không phải actuator."
+    },
+    {
+        question: "Câu 51. Giao thức nào phù hợp nhất cho thiết bị IoT tài nguyên hạn chế và yêu cầu băng thông thấp?",
+        options: [
+            "A. HTTP",
+            "B. FTP",
+            "C. MQTT",
+            "D. SNMP"
+        ],
+        correctIndex: 2,
+        explanation: "MQTT là giao thức nhẹ (lightweight), sử dụng mô hình publish/subscribe, overhead rất thấp, chỉ cần băng thông nhỏ và phù hợp hoàn hảo với thiết bị IoT có tài nguyên hạn chế (CPU, RAM, pin). HTTP và FTP nặng hơn nhiều, SNMP thì chủ yếu dùng cho quản trị mạng."
+    },
+    {
+        question: "Câu 52. Thách thức lớn nhất về bảo mật trong IoT là gì?",
+        options: [
+            "A. Chi phí phần cứng cao",
+            "B. Tốc độ truyền dữ liệu chậm",
+            "C. Tài nguyên hạn chế khiến việc triển khai cơ chế bảo mật (mã hóa, xác thực) trở nên khó khăn",
+            "D. Không hỗ trợ kết nối Internet"
+        ],
+        correctIndex: 2,
+        explanation: "Thiết bị IoT thường có CPU/RAM/pin hạn chế nên không thể chạy các thuật toán mã hóa mạnh hoặc certificate phức tạp. Điều này tạo ra bề mặt tấn công lớn nhất trong IoT, lớn hơn cả tốc độ hay chi phí."
+    },
+    {
+        question: "Câu 53. Trong kiến trúc IoT, thiết bị nào thường đóng vai trò chuyển đổi dữ liệu giữa mạng cảm biến cục bộ và Internet?",
+        options: [
+            "A. Sensor node",
+            "B. Actuator",
+            "C. IoT Gateway",
+            "D. Cloud server"
+        ],
+        correctIndex: 2,
+        explanation: "Gateway đóng vai trò “cầu nối”, chuyển đổi giao thức (Zigbee, LoRa, BLE → TCP/IP), thực hiện aggregation, filtering và bảo mật trước khi gửi dữ liệu lên Internet/Cloud."
+    },
+    {
+        question: "Câu 54. Nếu MQTT Keep Alive được cấu hình là 90 giây, broker sẽ xem client mất kết nối sau khoảng thời gian tối đa nào nếu không nhận bất kỳ gói tin nào?",
+        options: [
+            "A. 90 giây",
+            "B. 135 giây",
+            "C. 180 giây",
+            "D. 270 giây"
+        ],
+        correctIndex: 1,
+        explanation: "Theo đặc tả MQTT, broker sẽ chờ tối đa 1.5 × Keep Alive interval. Do đó 1.5 × 90 = 135 giây. Nếu không nhận được bất kỳ Control Packet nào (bao gồm PING), broker sẽ ngắt kết nối."
+    },
+    {
+        question: "Câu 55. Thành phần nào trong mô hình Publish/Subscribe của MQTT giúp giảm sự phụ thuộc trực tiếp giữa các thiết bị IoT?",
+        options: [
+            "A. Topic",
+            "B. Broker",
+            "C. Client",
+            "D. QoS"
+        ],
+        correctIndex: 1,
+        explanation: "Broker là trung gian, nhận message từ Publisher và phân phối đến Subscriber theo topic. Nhờ đó các thiết bị không cần biết địa chỉ IP hay kết nối trực tiếp với nhau, giảm sự phụ thuộc và tăng khả năng mở rộng."
+    },
+    {
+        question: "Câu 56. Trong giao thức HTTP truyền thống, nguyên nhân chính làm tiêu thụ năng lượng cao hơn MQTT trên thiết bị IoT là gì?",
+        options: [
+            "A. Header của HTTP quá ngắn",
+            "B. Phải thực hiện TCP handshake và gửi request/response liên tục (polling)",
+            "C. MQTT không hỗ trợ mã hóa",
+            "D. HTTP dùng UDP nên tốn pin hơn"
+        ],
+        correctIndex: 1,
+        explanation: "HTTP là stateless, request-response; mỗi lần lấy dữ liệu phải mở kết nối mới (handshake) và gửi header lớn → tiêu tốn nhiều năng lượng. MQTT duy trì kết nối persistent với overhead rất nhỏ và không polling."
+    },
+    {
+        question: "Câu 57. Một client MQTT subscribe topic home/room1/#, client này sẽ nhận dữ liệu nào sau đây?",
+        options: [
+            "A. Chỉ home/room1/temperature",
+            "B. home/room1/temperature và home/room1/light",
+            "C. home/room2/temperature",
+            "D. home/room1/sensor/temperature và home/room1/light/status"
+        ],
+        correctIndex: 3,
+        explanation: "Ký tự # là multi-level wildcard, nhận mọi topic bắt đầu bằng “home/room1/” ở mọi cấp độ (bao gồm home/room1/anything/anything). Các lựa chọn A và B chỉ là trường hợp đặc biệt, C nằm ngoài topic."
+    },
+    {
+        question: "Câu 58. Trong hệ thống IoT cloud-based, ưu điểm lớn nhất của việc xử lý dữ liệu trên cloud là gì?",
+        options: [
+            "A. Giảm độ trễ xuống mức thấp nhất",
+            "B. Khả năng mở rộng (scalability) và sức mạnh tính toán lớn mà không cần nâng cấp phần cứng tại edge",
+            "C. Không cần kết nối Internet",
+            "D. Tiết kiệm hoàn toàn chi phí lưu trữ"
+        ],
+        correctIndex: 1,
+        explanation: "Cloud cung cấp tài nguyên gần như vô hạn (CPU, GPU, storage) để xử lý Big Data, machine learning mà các thiết bị edge không thể làm được. Độ trễ thực tế lại cao hơn edge computing."
+    },
+    {
+        question: "Câu 59. Trong hệ thống MQTT, cơ chế nào cho phép ứng dụng nhận dữ liệu cảm biến theo thời gian thực mà không cần gửi request liên tục?",
+        options: [
+            "A. Request-Response",
+            "B. Polling",
+            "C. Publish/Subscribe",
+            "D. Client-Server truyền thống"
+        ],
+        correctIndex: 2,
+        explanation: "Với mô hình Pub/Sub, sensor (publisher) chỉ push dữ liệu một lần lên broker khi có thay đổi. Subscriber nhận ngay lập tức mà không phải liên tục gửi request (khác hoàn toàn với HTTP polling)."
+    },
+    {
+        question: "Câu 60. Trong MQTT, nếu một bản tin được gửi với cờ \"Retain\" được bật (set to true), Broker sẽ làm gì?",
+        options: [
+            "A. Xóa ngay message sau khi gửi cho tất cả subscriber",
+            "B. Lưu lại message cuối cùng cho topic và tự động gửi cho mọi client subscribe sau này",
+            "C. Chỉ gửi cho client đang online lúc đó",
+            "D. Tăng QoS lên mức 2"
+        ],
+        correctIndex: 1,
+        explanation: "Cờ Retain = true khiến broker giữ lại bản tin cuối cùng. Khi có client mới subscribe topic đó, broker sẽ gửi ngay bản tin retained giúp client nhận được trạng thái mới nhất mà không phải chờ publisher gửi lại."
+    },
+    {
+        question: "Câu 61. Vì sao QoS mức 1 thường được sử dụng trong hệ thống điều khiển thiết bị IoT?",
+        options: [
+            "A. Để tiết kiệm băng thông và pin thiết bị",
+            "B. Để đảm bảo tin nhắn được gửi đúng một lần duy nhất",
+            "C. Để đảm bảo tin nhắn được giao ít nhất một lần mà không quá phức tạp",
+            "D. Để không cần xác nhận từ receiver"
+        ],
+        correctIndex: 2,
+        explanation: "Trong giao thức MQTT (phổ biến cho IoT), QoS mức 1 (At least once) sử dụng cơ chế acknowledge để đảm bảo lệnh điều khiển được nhận ít nhất một lần (có thể trùng lặp nhưng chấp nhận được). Đây là lựa chọn cân bằng giữa độ tin cậy và overhead, phù hợp cho điều khiển thiết bị (không muốn bỏ lỡ lệnh quan trọng). QoS 0 quá rủi ro (có thể mất), QoS 2 (Exactly once) nặng nề hơn, tiêu tốn tài nguyên IoT."
+    },
+    {
+        question: "Câu 62. Overfitting xảy ra khi mô hình học máy rơi vào trạng thái nào?",
+        options: [
+            "A. Mô hình quá đơn giản, underfit dữ liệu",
+            "B. Mô hình học quá tốt trên training data nhưng generalize kém trên test data",
+            "C. Mô hình cân bằng hoàn hảo giữa bias và variance",
+            "D. Mô hình chỉ học được pattern của majority class"
+        ],
+        correctIndex: 1,
+        explanation: "Overfitting là trạng thái mô hình quá phức tạp, “học thuộc lòng” cả noise trong training data, dẫn đến accuracy cao trên tập huấn luyện nhưng performance thấp trên dữ liệu mới (test/validation). Đây là high variance, low bias."
+    },
+    {
+        question: "Câu 63. Dataset imbalance thường gây ảnh hưởng gì đến mô hình AI?",
+        options: [
+            "A. Làm mô hình học chậm hơn",
+            "B. Làm mô hình bias về phía lớp majority, performance kém trên minority class",
+            "C. Làm tăng độ chính xác tổng thể",
+            "D. Không ảnh hưởng gì đến classification"
+        ],
+        correctIndex: 1,
+        explanation: "Khi dataset imbalance (lớp majority chiếm ưu thế), mô hình sẽ ưu tiên dự đoán lớp đa số để giảm tổng loss, dẫn đến accuracy cao giả tạo nhưng recall/F1-score rất thấp trên lớp thiểu số (ví dụ: phát hiện gian lận, bệnh hiếm)."
+    },
+    {
+        question: "Câu 64. Edge AI giúp cải thiện yếu tố nào trong hệ thống IoT?",
+        options: [
+            "A. Tăng dung lượng lưu trữ cloud",
+            "B. Giảm latency và tiết kiệm băng thông truyền dữ liệu",
+            "C. Tăng phụ thuộc vào kết nối internet",
+            "D. Làm phức tạp hóa phần cứng thiết bị"
+        ],
+        correctIndex: 1,
+        explanation: "Edge AI xử lý dữ liệu ngay tại thiết bị edge thay vì gửi hết lên cloud, giúp giảm độ trễ (low latency – rất quan trọng cho điều khiển thời gian thực), tiết kiệm băng thông và pin, đồng thời tăng tính riêng tư và hoạt động offline."
+    },
+    {
+        question: "Câu 65. Dữ liệu cảm biến trong hệ thống IoT thường có đặc điểm gì?",
+        options: [
+            "A. Luôn chính xác 100% và không noise",
+            "B. Thường là time-series, real-time, volume lớn và có noise",
+            "C. Chỉ là dữ liệu tĩnh, không thay đổi theo thời gian",
+            "D. Dễ dàng phân loại mà không cần preprocessing"
+        ],
+        correctIndex: 1,
+        explanation: "Dữ liệu cảm biến IoT thường là chuỗi thời gian (time-series), sinh ra liên tục (streaming/real-time), lượng lớn (high velocity/volume), và dễ bị nhiễu (noise) từ môi trường, đòi hỏi preprocessing mạnh trước khi đưa vào mô hình AI."
+    },
+    {
+        question: "Câu 66. Pipeline AI đúng thường bao gồm các bước theo thứ tự nào?",
+        options: [
+            "A. Training → Deployment → Data collection → Preprocessing",
+            "B. Data collection → Preprocessing → Feature engineering → Model training → Evaluation → Deployment",
+            "C. Model training → Evaluation → Data collection",
+            "D. Deployment → Monitoring → Training"
+        ],
+        correctIndex: 1,
+        explanation: "Pipeline AI/ML chuẩn (MLOps) bắt đầu từ thu thập dữ liệu → tiền xử lý & làm sạch → trích xuất đặc trưng → huấn luyện mô hình → đánh giá → triển khai & giám sát. Thứ tự sai sẽ làm pipeline không hoạt động hiệu quả."
+    },
+    {
+        question: "Câu 67. Sự kết hợp giữa IoT và AI giúp hệ thống chuyển từ reactive sang dạng nào?",
+        options: [
+            "A. Static",
+            "B. Proactive hoặc predictive (chủ động/dự đoán)",
+            "C. Manual",
+            "D. Batch processing"
+        ],
+        correctIndex: 1,
+        explanation: "IoT cung cấp dữ liệu real-time, AI phân tích để dự đoán sự cố và hành động chủ động (predictive maintenance, smart decision), thay vì chỉ phản ứng sau khi sự kiện xảy ra (reactive)."
+    },
+    {
+        question: "Câu 68. Một cảm biến đo áp suất xuất tín hiệu analog từ 0V đến 3.3V. Kết nối cảm biến này vào bộ ADC 10-bit với $V_{ref} = 3.3V$. Nếu giá trị số đọc được từ ADC là 512, điện áp hiện tại của cảm biến là bao nhiêu?",
+        options: [
+            "A. 1.65 V",
+            "B. 3.3 V",
+            "C. 0.5 V",
+            "D. 2.5 V"
+        ],
+        correctIndex: 0,
+        explanation: "Công thức: V = (giá trị ADC / 2¹⁰) × V_ref = (512 / 1024) × 3.3 = 0.5 × 3.3 = 1.65 V. (ADC 10-bit có 1024 mức)."
+    },
+    {
+        question: "Câu 69. Một ultrasonic sensor đo được thời gian phản hồi 5.8 ms. Biết vận tốc âm thanh khoảng 340 m/s, khoảng cách đến vật cản gần đúng là bao nhiêu?",
+        options: [
+            "A. Khoảng 0.986 m (hoặc ~1 m)",
+            "B. Khoảng 1.972 m",
+            "C. Khoảng 0.5 m",
+            "D. Khoảng 3.4 m"
+        ],
+        correctIndex: 0,
+        explanation: "Khoảng cách = (vận tốc × thời gian) / 2 (thời gian là round-trip). (340 × 0.0058) / 2 = 1.972 / 2 ≈ 0.986 m ≈ 1 m."
+    },
+    {
+        question: "Câu 70. Khi cảm biến siêu âm HC-SR04 nhận Echo trong thời gian 20 ms, khoảng cách đo được gần đúng là bao nhiêu?",
+        options: [
+            "A. 3.4 m",
+            "B. 1.7 m",
+            "C. 6.8 m",
+            "D. 0.34 m"
+        ],
+        correctIndex: 0,
+        explanation: "Khoảng cách = (340 × 0.02) / 2 = 6.8 / 2 = 3.4 m. (Chia 2 vì thời gian là round-trip)."
+    },
+    {
+        question: "Câu 71. Trong hệ thống AIoT, lý do chính để triển khai Edge AI thay vì xử lý hoàn toàn trên Cloud là gì?",
+        options: [
+            "A. Tiết kiệm chi phí thuê server cloud",
+            "B. Tăng độ chính xác của mô hình AI",
+            "C. Giảm độ trễ (latency) và cho phép xử lý thời gian thực",
+            "D. Dễ dàng cập nhật mô hình từ xa"
+        ],
+        correctIndex: 2,
+        explanation: "Giải thích: Edge AI xử lý dữ liệu ngay tại thiết bị biên, tránh thời gian truyền dữ liệu lên cloud và xuống, rất quan trọng cho các ứng dụng AIoT cần phản hồi nhanh như camera giám sát, điều khiển tự động."
+    },
+    {
+        question: "Câu 72. Trong mô hình học máy giám sát (Supervised Learning), thành phần nào bắt buộc phải có trong tập dữ liệu huấn luyện?",
+        options: [
+            "A. Chỉ dữ liệu đầu vào (features)",
+            "B. Dữ liệu không nhãn (unlabeled data)",
+            "C. Dữ liệu có nhãn (labeled data) cho từng mẫu",
+            "D. Siêu tham số (hyperparameters)"
+        ],
+        correctIndex: 2,
+        explanation: "Giải thích: Supervised Learning yêu cầu tập dữ liệu có cặp input (features) và output mong muốn (labels) để mô hình học cách map từ input sang output."
+    },
+    {
+        question: "Câu 73. Một hệ thống camera AI phát hiện người xâm nhập theo thời gian thực thường ưu tiên dùng CNN vì đặc điểm nào?",
+        options: [
+            "A. CNN xử lý chuỗi thời gian tốt hơn",
+            "B. CNN hiệu quả trong việc trích xuất đặc trưng không gian từ hình ảnh",
+            "C. CNN yêu cầu ít dữ liệu huấn luyện hơn",
+            "D. CNN dễ triển khai trên phần cứng IoT"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: CNN (Convolutional Neural Network) sử dụng các lớp convolution để tự động trích xuất đặc trưng như cạnh, hình dạng, texture từ hình ảnh, rất phù hợp cho tác vụ computer vision như phát hiện người."
+    },
+    {
+        question: "Câu 74. Trong AIoT, nếu cảm biến gửi dữ liệu sai lệch hoặc nhiễu lớn, hậu quả nghiêm trọng nhất với mô hình AI là gì?",
+        options: [
+            "A. Tăng thời gian huấn luyện",
+            "B. Mô hình đưa ra dự đoán sai lệch, dẫn đến quyết định sai lầm có thể gây nguy hiểm",
+            "C. Giảm kích thước mô hình",
+            "D. Tăng độ chính xác trên dữ liệu sạch"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: “Garbage In - Garbage Out”. Dữ liệu nhiễu/sai lệch khiến mô hình học các pattern sai, dẫn đến inference kém, có thể gây hậu quả nghiêm trọng trong hệ thống vật lý như AIoT (an ninh, y tế, công nghiệp)."
+    },
+    {
+        question: "Câu 75. Trong quá trình huấn luyện Deep Learning cho IoT, hiện tượng Overfitting xảy ra khi nào?",
+        options: [
+            "A. Khi mô hình có accuracy thấp trên cả train và test set",
+            "B. Khi mô hình học quá tốt dữ liệu huấn luyện nhưng generalize kém trên dữ liệu mới",
+            "C. Khi mô hình học quá chậm",
+            "D. Khi loss function không giảm"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: Overfitting xảy ra khi mô hình quá phức tạp hoặc huấn luyện quá nhiều, “học thuộc lòng” cả nhiễu trong train data, dẫn đến hiệu suất kém trên validation/test data."
+    },
+    {
+        question: "Câu 76. Vì sao TensorFlow Lite thường được dùng trên thiết bị IoT thay vì TensorFlow đầy đủ?",
+        options: [
+            "A. TensorFlow Lite hỗ trợ huấn luyện mô hình",
+            "B. TensorFlow Lite có kích thước nhỏ, tối ưu tài nguyên và inference nhanh trên thiết bị hạn chế",
+            "C. TensorFlow Lite chạy được trên cloud tốt hơn",
+            "D. TensorFlow Lite không cần GPU"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: TF Lite được tối ưu hóa cho mobile/embedded/IoT: model nhẹ hơn, tiêu thụ ít bộ nhớ và năng lượng, inference nhanh trên CPU/MCU."
+    },
+    {
+        question: "Câu 77. Trong hệ IoT yêu cầu phản hồi thời gian thực, kiến trúc nào nên được ưu tiên hơn cloud thuần túy?",
+        options: [
+            "A. Cloud-only architecture",
+            "B. Edge Computing hoặc Hybrid Edge-Cloud",
+            "C. Fog Computing chỉ dùng cho dữ liệu lớn",
+            "D. Serverless architecture"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: Edge Computing xử lý tại biên giúp giảm latency, phù hợp real-time. Cloud thuần có độ trễ cao do truyền dữ liệu."
+    },
+    {
+        question: "Câu 78. Ưu điểm chính của vTaskDelay() so với delay() trong FreeRTOS là gì?",
+        options: [
+            "A. vTaskDelay() chính xác hơn về thời gian tuyệt đối",
+            "B. vTaskDelay() cho phép task chuyển sang trạng thái Blocked, nhường CPU cho các task khác (không busy-wait)",
+            "C. vTaskDelay() dễ sử dụng hơn",
+            "D. vTaskDelay() chỉ dùng cho interrupt"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: vTaskDelay() đặt task vào Blocked state theo số tick, cho scheduler chạy task khác. delay() (thường từ Arduino) là busy-wait loop, chặn CPU."
+    },
+    {
+        question: "Câu 79. FreeRTOS chủ yếu được viết bằng ngôn ngữ lập trình nào?",
+        options: [
+            "A. Python",
+            "B. C++",
+            "C. C",
+            "D. Java"
+        ],
+        correctIndex: 2,
+        explanation: "Giải thích: FreeRTOS chủ yếu được viết bằng ngôn ngữ C để dễ port sang nhiều nền tảng phần cứng nhúng khác nhau."
+    },
+    {
+        question: "Câu 80. Vì sao FreeRTOS phù hợp với hệ thống nhúng?",
+        options: [
+            "A. FreeRTOS yêu cầu RAM và ROM lớn",
+            "B. FreeRTOS có footprint nhỏ, hỗ trợ real-time multitasking, portable trên nhiều MCU",
+            "C. FreeRTOS chỉ dùng cho desktop",
+            "D. FreeRTOS không hỗ trợ task priority"
+        ],
+        correctIndex: 1,
+        explanation: "Giải thích: FreeRTOS là RTOS nhẹ, chiếm ít bộ nhớ, cung cấp scheduling real-time, dễ tích hợp vào các vi điều khiển có tài nguyên hạn chế."
+    },
+    {
+        question: "Câu 81. Hàm xTaskCreatePinnedToCore() trong FreeRTOS dùng để làm gì?",
+        options: [
+            "A. Tạo một task thông thường mà không quan tâm đến core nào",
+            "B. Tạo task và ghim (pin) task đó vào một core cụ thể (0 hoặc 1)",
+            "C. Xóa một task đang chạy",
+            "D. Tạo message queue với độ dài cố định"
+        ],
+        correctIndex: 1,
+        explanation: "Hàm xTaskCreatePinnedToCore() được thiết kế dành riêng cho hệ đa lõi như ESP32, cho phép tạo task và ghim (pin) task đó cố định vào một core cụ thể (core 0 hoặc core 1). Điều này giúp developer kiểm soát core affinity và tối ưu hóa tải giữa các core."
+    },
+    {
+        question: "Câu 82. ESP32 thông thường có bao nhiêu lõi xử lý?",
+        options: [
+            "A. 1 lõi",
+            "B. 2 lõi (dual-core Xtensa LX6)",
+            "C. 4 lõi",
+            "D. 8 lõi"
+        ],
+        correctIndex: 1,
+        explanation: "ESP32 tiêu chuẩn (ESP32-D0WD, ESP32-WROOM…) được trang bị 2 lõi xử lý Xtensa 32-bit, cho phép chạy hai task song song thực sự trên hai core riêng biệt."
+    },
+    {
+        question: "Câu 83. Trong ESP8266, chế độ chân GPIO ở trạng thái High-Z mang ý nghĩa gì?",
+        options: [
+            "A. Chân GPIO đang output mức cao (logic 1)",
+            "B. Chân GPIO đang output mức thấp (logic 0)",
+            "C. Chân GPIO ở trạng thái trở kháng cao (không drive, tương đương ngắt kết nối hoặc chế độ input không pull)",
+            "D. Chân GPIO đang kích hoạt pull-up nội"
+        ],
+        correctIndex: 2,
+        explanation: "High-Z (High Impedance) là trạng thái tri-state: chân GPIO không cung cấp dòng điện ra/vào (không drive 0 hoặc 1), giống như chân bị “ngắt” về mặt điện. Thường dùng khi cấu hình làm input hoặc chia sẻ bus."
+    },
+    {
+        question: "Câu 84. Trong Cooperative Scheduler, điều gì xảy ra nếu một task chứa vòng lặp vô hạn mà không gọi yield(), delay() hoặc return?",
+        options: [
+            "A. Scheduler tự động chuyển sang task khác sau một khoảng thời gian",
+            "B. Task đó sẽ chiếm toàn bộ CPU mãi mãi, các task khác không bao giờ được chạy",
+            "C. Task sẽ tự động bị treo (suspend)",
+            "D. Hệ thống sẽ tự động reset"
+        ],
+        correctIndex: 1,
+        explanation: "Cooperative Scheduler (non-preemptive) chỉ chuyển task khi task hiện tại tự nguyện nhường CPU qua yield(), delay() hoặc return. Nếu task chạy vòng lặp vô hạn không nhường CPU, nó sẽ chiếm toàn bộ CPU, gây starvation cho các task khác."
+    },
+    {
+        question: "Câu 85. Trong RTOS priority-based preemptive scheduling, nguyên nhân chính gây ra hiện tượng “priority inversion” là gì?",
+        options: [
+            "A. Task ưu tiên cao chạy quá lâu",
+            "B. Task ưu tiên thấp giữ resource (mutex/semaphore) mà task ưu tiên cao đang chờ, và bị task ưu tiên trung bình preempt",
+            "C. Scheduler bị lỗi cấu hình",
+            "D. Task ưu tiên cao bị treo bởi watchdog"
+        ],
+        correctIndex: 1,
+        explanation: "Priority inversion xảy ra khi task low-priority giữ shared resource (mutex/semaphore) mà task high-priority cần, đồng thời một task medium-priority preempt low-priority → high-priority bị “đảo ngược” ưu tiên và phải chờ lâu hơn dự kiến."
+    },
+    {
+        question: "Câu 86. Một message queue trong RTOS được cấu hình length = 5 và hiện đã đầy. Khi một task ưu tiên thấp tiếp tục ghi dữ liệu vào queue, điều gì đúng nhất?",
+        options: [
+            "A. Dữ liệu mới sẽ ghi đè (overwrite) lên phần tử cũ nhất",
+            "B. Gọi xQueueSend() sẽ trả về lỗi ngay lập tức hoặc task bị block (tùy timeout) cho đến khi queue có chỗ trống",
+            "C. Queue tự động mở rộng độ dài lên 6",
+            "D. Task ưu tiên thấp sẽ bị treo vĩnh viễn"
+        ],
+        correctIndex: 1,
+        explanation: "Khi queue đầy, hàm xQueueSend() sẽ trả về errQUEUE_FULL (nếu timeout = 0) hoặc task chuyển sang trạng thái Blocked chờ có chỗ trống (nếu timeout > 0). Không có cơ chế overwrite tự động."
+    },
+    {
+        question: "Câu 87. Trong hệ hard real-time sử dụng thuật toán Rate Monotonic (RM), task nào sẽ có mức ưu tiên cao hơn?",
+        options: [
+            "A. Task có thời gian thực thi (execution time) dài hơn",
+            "B. Task có chu kỳ (period) ngắn hơn (tần suất xuất hiện cao hơn)",
+            "C. Task có deadline dài hơn",
+            "D. Task có độ ưu tiên tĩnh do người dùng gán thủ công"
+        ],
+        correctIndex: 1,
+        explanation: "Rate Monotonic Scheduling gán ưu tiên tĩnh dựa trên chu kỳ: task có period càng ngắn (rate càng cao) thì được ưu tiên càng cao. Đây là thuật toán tối ưu cho hệ periodic hard real-time."
+    },
+    {
+        question: "Câu 88. Trong FreeRTOS trên ESP32, ý nghĩa chính của hàm xTaskCreatePinnedToCore() là gì?",
+        options: [
+            "A. Tạo task chạy trên core bất kỳ do scheduler quyết định",
+            "B. Tạo task và ghim (pin) task đó cố định vào một core cụ thể (core 0 hoặc core 1)",
+            "C. Tạo task chạy đồng thời trên cả hai core",
+            "D. Tạo task chỉ dùng cho core 0 (core mặc định)"
+        ],
+        correctIndex: 1,
+        explanation: "xTaskCreatePinnedToCore() cho phép developer chỉ định chính xác core mà task sẽ chạy (tham số xCoreID). Rất quan trọng trên ESP32 dual-core để kiểm soát task affinity và cân bằng tải giữa hai core."
+    },
+    {
+        question: "Câu 89. Trong hệ thống RTOS, cơ chế nào giúp nhiều task sử dụng chung CPU mà vẫn tạo cảm giác chạy song song?",
+        options: [
+            "A. Interrupt",
+            "B. Context switching do scheduler quản lý",
+            "C. DMA",
+            "D. Watchdog timer"
+        ],
+        correctIndex: 1,
+        explanation: "Scheduler (preemptive hoặc cooperative) thực hiện context switching liên tục: lưu trạng thái task hiện tại và khôi phục task tiếp theo. Nhờ đó nhiều task chia sẻ CPU và tạo cảm giác chạy song song (concurrency)."
+    },
+    {
+        question: "Câu 90. Nếu một task có độ ưu tiên thấp giữ mutex quá lâu, hiện tượng nào có thể xảy ra với task ưu tiên cao?",
+        options: [
+            "A. Task ưu tiên cao sẽ tự động lấy được mutex mà không chờ",
+            "B. Task ưu tiên cao bị priority inversion (phải chờ lâu hơn dự kiến)",
+            "C. Task ưu tiên thấp sẽ tự động nhường mutex",
+            "D. Hệ thống sẽ reset ngay lập tức"
+        ],
+        correctIndex: 1,
+        explanation: "Khi task low-priority giữ mutex lâu, task high-priority cần mutex đó sẽ bị block. Nếu có task medium-priority chạy xen, hiện tượng priority inversion sẽ xảy ra, khiến task high-priority phải chờ lâu hơn dự kiến."
+    },
+    {
+        question: "Câu 91. Trong RTOS, semaphore nhị phân thường được sử dụng chủ yếu để làm gì?",
+        options: [
+            "A. Đếm số lượng tài nguyên có sẵn (resource counting)",
+            "B. Đồng bộ hóa giữa các task hoặc giữa ISR và task",
+            "C. Quản lý bộ nhớ động (dynamic memory allocation)",
+            "D. Phân bổ CPU theo thời gian (time slicing)"
+        ],
+        correctIndex: 1,
+        explanation: "Semaphore nhị phân (binary semaphore) có giá trị chỉ 0 hoặc 1, chủ yếu dùng để đồng bộ hóa (signaling) giữa các task hoặc từ ISR đến task. Khi ISR hoặc task khác “give” semaphore, task đang chờ “take” sẽ được đánh thức ngay lập tức."
+    },
+    {
+        question: "Câu 92. Một task đang ở trạng thái Blocked sẽ chuyển sang Ready khi nào?",
+        options: [
+            "A. Khi task có priority cao nhất trong hệ thống",
+            "B. Khi hết thời gian delay được chỉ định hoặc sự kiện đang chờ (semaphore/queue/message) xảy ra",
+            "C. Khi hệ thống thực hiện context switch",
+            "D. Khi task gọi hàm vTaskSuspend()"
+        ],
+        correctIndex: 1,
+        explanation: "Trạng thái Blocked nghĩa là task đang chờ một sự kiện (timeout, semaphore, queue, event flag…). Khi sự kiện đó xảy ra (hoặc timeout hết hạn), kernel sẽ chuyển task từ Blocked → Ready ngay lập tức để sẵn sàng chạy."
+    },
+    {
+        question: "Câu 93. Trong FreeRTOS, hàm delay task thường được dùng nhằm mục đích gì ngoài việc tạo trễ?",
+        options: [
+            "A. Tăng priority của task hiện tại",
+            "B. Cho phép scheduler chuyển CPU sang các task khác (yield CPU)",
+            "C. Giải phóng bộ nhớ stack của task",
+            "D. Kích hoạt interrupt handler"
+        ],
+        correctIndex: 1,
+        explanation: "Ngoài việc tạo khoảng trễ thời gian, vTaskDelay() / vTaskDelayUntil() đưa task vào trạng thái Blocked → scheduler có cơ hội chạy các task Ready khác (đặc biệt là task có priority thấp hơn). Đây là cách quan trọng để tránh task chiếm CPU liên tục."
+    },
+    {
+        question: "Câu 94. Nếu tất cả task trong hệ RTOS đều có vòng lặp vô hạn không delay, hệ thống dễ gặp vấn đề gì nhất?",
+        options: [
+            "A. Deadlock",
+            "B. Starvation (các task priority thấp không bao giờ được chạy)",
+            "C. Memory leak",
+            "D. Interrupt latency quá thấp"
+        ],
+        correctIndex: 1,
+        explanation: "Trong lập lịch ưu tiên (priority-based preemptive), task priority cao nhất mà không delay/yield sẽ chiếm CPU 100%. Các task priority thấp hơn sẽ bị “đói CPU” (starvation), hệ thống mất tính thời gian thực."
+    },
+    {
+        question: "Câu 95. Context switching trong RTOS là quá trình gì?",
+        options: [
+            "A. Chuyển đổi giữa các interrupt handler",
+            "B. Lưu ngữ cảnh (register, stack pointer, PC…) của task hiện tại và khôi phục ngữ cảnh của task tiếp theo",
+            "C. Tính toán lại priority của tất cả task",
+            "D. Kiểm tra stack overflow"
+        ],
+        correctIndex: 1,
+        explanation: "Context switching là thao tác cốt lõi của kernel RTOS: lưu toàn bộ trạng thái của task đang chạy (context) vào stack của nó, sau đó khôi phục context của task được chọn chạy tiếp theo. Đây là chi phí quan trọng ảnh hưởng đến hiệu suất RTOS."
+    },
+    {
+        question: "Câu 96. Trong cơ chế Round Robin Scheduling, CPU được phân chia dựa trên yếu tố nào?",
+        options: [
+            "A. Priority của task",
+            "B. Thời gian slice (time quantum) cố định",
+            "C. Số lượng semaphore task đang hold",
+            "D. Kích thước stack của task"
+        ],
+        correctIndex: 1,
+        explanation: "Round Robin chia CPU thành các “lượt” (time slice) bằng nhau cho các task cùng priority. Khi hết slice, task bị tạm dừng và chuyển sang task cùng mức priority tiếp theo trong hàng đợi sẵn sàng."
+    },
+    {
+        question: "Câu 97. Nếu interrupt xảy ra với tần số quá cao trong hệ RTOS, hậu quả nào dễ xuất hiện nhất?",
+        options: [
+            "A. Task priority bị đảo ngược",
+            "B. CPU bị chiếm quá nhiều bởi ISR → task không kịp chạy, vi phạm deadline thời gian thực",
+            "C. Deadlock tự động xảy ra",
+            "D. Semaphore bị overflow"
+        ],
+        correctIndex: 1,
+        explanation: "Interrupt rate quá cao làm CPU dành phần lớn thời gian trong chế độ interrupt, các task người dùng (application tasks) không được lập lịch kịp → missed deadlines, hệ thống mất tính xác định (deterministic)."
+    },
+    {
+        question: "Câu 98. Queue trong RTOS phù hợp nhất với mục đích nào?",
+        options: [
+            "A. Đồng bộ hóa hai task (synchronization)",
+            "B. Truyền dữ liệu / thông điệp giữa các task (inter-task communication)",
+            "C. Bảo vệ critical section (mutual exclusion)",
+            "D. Quản lý priority của task"
+        ],
+        correctIndex: 1,
+        explanation: "Queue (mailbox) được thiết kế chuyên biệt để truyền dữ liệu an toàn giữa các task (hoặc ISR → task) theo cơ chế FIFO, hỗ trợ blocking khi queue rỗng hoặc đầy."
+    },
+    {
+        question: "Câu 99. Vì sao RTOS thường phù hợp với hệ thống điều khiển thời gian thực hơn super loop truyền thống?",
+        options: [
+            "A. RTOS chiếm ít bộ nhớ RAM hơn",
+            "B. RTOS cung cấp lập lịch ưu tiên + deterministic response time, đảm bảo task quan trọng luôn được chạy đúng hạn",
+            "C. Super loop không hỗ trợ interrupt",
+            "D. RTOS không cần viết code vòng lặp"
+        ],
+        correctIndex: 1,
+        explanation: "Super loop (while(1)) chạy tuần tự, thời gian phản hồi phụ thuộc vào độ dài hàm dài nhất → không thể dự đoán. RTOS dùng priority-based preemptive scheduling nên task có priority cao nhất luôn được đáp ứng đúng thời gian (deterministic), rất cần thiết cho hệ thống hard real-time."
+    },
+    {
+        question: "Câu 100. Trong RTOS, deadlock thường xuất hiện khi nào?",
+        options: [
+            "A. Khi tất cả task đều có delay",
+            "B. Khi có nhiều task cùng hold nhiều mutex/semaphore theo thứ tự khác nhau, tạo thành vòng chờ lẫn nhau (circular wait)",
+            "C. Khi interrupt rate quá thấp",
+            "D. Khi dùng Round Robin scheduling"
+        ],
+        correctIndex: 1,
+        explanation: "Deadlock điển hình xảy ra khi task A giữ mutex1 và chờ mutex2, trong khi task B giữ mutex2 và chờ mutex1 → cả hai đều không tiến triển được (circular dependency). Giải pháp phổ biến là luôn lock theo cùng một thứ tự hoặc dùng priority inheritance."
+    },
+    {
+        question: "Câu 101. Nếu một task ưu tiên thấp bị task ưu tiên trung bình liên tục chiếm CPU trong khi đang giữ tài nguyên của task ưu tiên cao, hiện tượng này gọi là gì?",
+        options: [
+            "A. Deadlock",
+            "B. Nghịch đảo ưu tiên (Priority Inversion)",
+            "C. Starvation",
+            "D. Race condition"
+        ],
+        correctIndex: 1,
+        explanation: "Đây chính là hiện tượng nghịch đảo ưu tiên (Priority Inversion). Task ưu tiên thấp đang giữ tài nguyên (ví dụ mutex) mà task ưu tiên cao cần, nhưng task ưu tiên trung bình liên tục chiếm CPU và preempt task thấp → task cao bị treo vô thời hạn dù có ưu tiên cao nhất."
+    },
+    {
+        question: "Câu 102. Scheduler trong RTOS có nhiệm vụ chính là gì?",
+        options: [
+            "A. Quản lý bộ nhớ cho các task",
+            "B. Phân bổ CPU cho task sẵn sàng có ưu tiên cao nhất",
+            "C. Xử lý các ngắt phần cứng",
+            "D. Tạo và xóa task"
+        ],
+        correctIndex: 1,
+        explanation: "Nhiệm vụ cốt lõi của Scheduler trong RTOS là quyết định task nào sẽ được chạy tiếp theo dựa trên chính sách lập lịch (thường là priority-based preemptive), đảm bảo tính deterministic và đáp ứng thời gian thực."
+    },
+    {
+        question: "Câu 103. Tick interrupt trong RTOS thường dùng để thực hiện chức năng nào?",
+        options: [
+            "A. Xử lý ngắt từ ngoại vi người dùng",
+            "B. Cập nhật tick count, hỗ trợ time slicing, delay và timeout",
+            "C. Chuyển ngữ cảnh task (context switch)",
+            "D. Kiểm tra stack overflow"
+        ],
+        correctIndex: 1,
+        explanation: "Tick interrupt (thường 1ms hoặc 10ms) là “nhịp tim” của kernel RTOS. Nó tăng tick count, kiểm tra các task đang delay/timeout và kích hoạt scheduler nếu cần thực hiện time slicing hoặc preemption."
+    },
+    {
+        question: "Câu 104. Một hệ thống dùng RTOS nhưng chỉ có duy nhất một task sẽ dẫn đến đặc điểm gì?",
+        options: [
+            "A. Hệ thống vẫn có đầy đủ tính năng multitasking",
+            "B. Scheduler sẽ không bao giờ chạy vì không có task để switch",
+            "C. Hệ thống hoạt động giống bare-metal, không có lợi ích multitasking",
+            "D. Task duy nhất sẽ tự động có priority cao nhất"
+        ],
+        correctIndex: 2,
+        explanation: "Khi chỉ còn duy nhất một task, scheduler không có task nào khác để chuyển ngữ cảnh → hệ thống chạy như một vòng lặp siêu đơn giản (super-loop), mất hoàn toàn lợi ích của RTOS về đa nhiệm và lập lịch thời gian thực."
+    },
+    {
+        question: "Câu 105. Trong FreeRTOS, task priority càng lớn thì điều gì xảy ra?",
+        options: [
+            "A. Task có độ ưu tiên thấp hơn",
+            "B. Task có độ ưu tiên cao hơn và được scheduler chọn chạy trước",
+            "C. Task sẽ bị giảm priority tự động",
+            "D. Task chỉ chạy khi không có task nào khác"
+        ],
+        correctIndex: 1,
+        explanation: "Trong FreeRTOS, priority càng lớn (ví dụ configMAX_PRIORITIES = 5, priority = 4 là cao nhất) thì task càng được ưu tiên. Scheduler luôn chọn task sẵn sàng có priority cao nhất chạy trước."
+    },
+    {
+        question: "Câu 106. Mutex khác semaphore ở điểm quan trọng nào trong RTOS?",
+        options: [
+            "A. Mutex và semaphore đều không có ownership",
+            "B. Mutex có cơ chế priority inheritance và chỉ task sở hữu mới unlock được",
+            "C. Semaphore chỉ dùng cho mutual exclusion",
+            "D. Mutex không hỗ trợ recursive lock"
+        ],
+        correctIndex: 1,
+        explanation: "Đây là điểm khác biệt quan trọng nhất. Mutex trong RTOS (đặc biệt FreeRTOS) có ownership (chỉ task lock mới unlock được) và hỗ trợ priority inheritance để tránh priority inversion, trong khi semaphore là công cụ signaling chung (bất kỳ task nào cũng có thể give)."
+    },
+    {
+        question: "Câu 107. Event Group trong RTOS phù hợp nhất với trường hợp nào?",
+        options: [
+            "A. Đồng bộ chỉ 1 event duy nhất",
+            "B. Task chờ nhiều bit event (any/all bits) cùng lúc một cách hiệu quả",
+            "C. Bảo vệ tài nguyên chia sẻ",
+            "D. Truyền dữ liệu giữa các task"
+        ],
+        correctIndex: 1,
+        explanation: "Event Group (FreeRTOS) rất phù hợp khi một task cần chờ nhiều sự kiện khác nhau (ví dụ bit 0, bit 3, bit 7) và có thể chờ “any” hoặc “all” bits mà không tốn nhiều tài nguyên như dùng nhiều semaphore riêng lẻ."
+    },
+    {
+        question: "Câu 108. Nếu thời gian xử lý của task vượt quá deadline cho phép trong hệ thời gian thực cứng, điều gì xảy ra?",
+        options: [
+            "A. Task sẽ tự động được tăng priority",
+            "B. Hệ thống vẫn hoạt động bình thường",
+            "C. Hệ thống thất bại (catastrophic failure)",
+            "D. Scheduler sẽ chuyển sang task khác"
+        ],
+        correctIndex: 2,
+        explanation: "Trong hard real-time system, deadline bị miss là không chấp nhận được. Hệ thống có thể gây ra tai nạn, hỏng hóc thiết bị hoặc mất an toàn (ví dụ ô tô tự lái, máy bay, thiết bị y tế)."
+    },
+    {
+        question: "Câu 109. Trong RTOS, starvation là hiện tượng gì?",
+        options: [
+            "A. Task bị treo vô thời hạn vì chờ semaphore",
+            "B. Task ưu tiên thấp không bao giờ được cấp CPU vì luôn bị task ưu tiên cao hơn chiếm",
+            "C. Task bị deadlock với nhau",
+            "D. Task bị priority inversion"
+        ],
+        correctIndex: 1,
+        explanation: "Starvation (đói CPU) xảy ra khi task có priority thấp liên tục bị các task priority cao hơn preempt, dẫn đến task đó không bao giờ được chạy dù đã sẵn sàng."
+    },
+    {
+        question: "Câu 110. Một task liên tục polling thay vì chờ interrupt sẽ gây ảnh hưởng gì lớn nhất?",
+        options: [
+            "A. Tăng độ chính xác thời gian thực",
+            "B. Lãng phí CPU cycles, tiêu tốn năng lượng và giảm khả năng đáp ứng của hệ thống",
+            "C. Giảm độ trễ phản hồi",
+            "D. Tăng tính ổn định của scheduler"
+        ],
+        correctIndex: 1,
+        explanation: "Polling liên tục (busy-waiting) làm CPU chạy 100% ngay cả khi không có việc, gây nóng máy, hao pin, và làm chậm các task khác quan trọng hơn. Sử dụng interrupt + wait/block là cách tối ưu nhất trong RTOS."
+    },
+    {
+        question: "Câu 111. Trong mô hình preemptive scheduling, task đang chạy sẽ bị thay thế khi nào?",
+        options: [
+            "A. Khi task hiện tại hoàn thành toàn bộ công việc và gọi vTaskDelay()",
+            "B. Khi hết time slice (quantum) được cấp cho task",
+            "C. Khi một task có độ ưu tiên cao hơn trở nên sẵn sàng chạy (ready)",
+            "D. Khi có interrupt xảy ra bất kỳ"
+        ],
+        correctIndex: 2,
+        explanation: "Trong preemptive priority scheduling (mặc định của FreeRTOS), scheduler luôn chọn task có priority cao nhất đang ở trạng thái ready. Do đó task đang chạy sẽ bị preempt ngay lập tức khi một task priority cao hơn trở nên ready (thường qua ISR hoặc task khác). Time slice chỉ áp dụng khi nhiều task cùng priority."
+    },
+    {
+        question: "Câu 112. Idle task trong FreeRTOS tồn tại chủ yếu nhằm mục đích gì?",
+        options: [
+            "A. Thực hiện low-power mode và theo dõi statistics",
+            "B. Chạy background tasks không quan trọng",
+            "C. Giải phóng bộ nhớ (memory) được cấp cho các task đã bị xóa bằng vTaskDelete()",
+            "D. Xử lý các interrupt bị treo"
+        ],
+        correctIndex: 2,
+        explanation: "Idle task được kernel tự động tạo với priority thấp nhất. Chức năng quan trọng nhất là dọn dẹp (free) bộ nhớ của task đã bị xóa bằng vTaskDelete(). Nếu idle task không chạy, bộ nhớ của các task đã delete sẽ bị leak vĩnh viễn."
+    },
+    {
+        question: "Câu 113. Nếu queue bị đầy nhưng task vẫn tiếp tục ghi dữ liệu vào queue, điều gì có thể xảy ra?",
+        options: [
+            "A. Dữ liệu mới sẽ tự động ghi đè lên dữ liệu cũ nhất",
+            "B. Task sẽ chuyển sang trạng thái Blocked cho đến khi queue có chỗ trống (nếu dùng block time > 0)",
+            "C. Queue tự động mở rộng kích thước để tránh mất dữ liệu",
+            "D. Hệ thống sẽ ngay lập tức crash (hard fault)"
+        ],
+        correctIndex: 1,
+        explanation: "Khi gọi xQueueSend() (hoặc xQueueSendToBack/Front) lên queue đã đầy, nếu tham số block time > 0 (hoặc portMAX_DELAY), task sẽ tự động chuyển sang Blocked cho đến khi có chỗ trống hoặc timeout. Đây là cơ chế cốt lõi của FreeRTOS queue."
+    },
+    {
+        question: "Câu 114. Priority inheritance được dùng để giải quyết vấn đề gì trong RTOS?",
+        options: [
+            "A. Deadlock giữa các task",
+            "B. Priority inversion",
+            "C. Starvation của task priority thấp",
+            "D. Race condition khi truy cập shared resource"
+        ],
+        correctIndex: 1,
+        explanation: "Priority inversion xảy ra khi task priority cao bị block gián tiếp bởi task priority thấp đang giữ mutex/semaphore, trong khi task priority trung bình preempt task thấp. Priority inheritance tạm thời nâng priority của task thấp lên bằng task cao để khắc phục."
+    },
+    {
+        question: "Câu 115. Khi một task gọi vTaskDelete chính nó, điều gì xảy ra tiếp theo?",
+        options: [
+            "A. Task ngay lập tức dừng và không bao giờ chạy lại, bộ nhớ được giải phóng ngay",
+            "B. Task bị xóa khỏi tất cả các list của scheduler, scheduler chuyển ngay sang task khác; bộ nhớ được idle task dọn dẹp sau",
+            "C. Hàm vTaskDelete() sẽ trả về lỗi vì không cho phép xóa chính mình",
+            "D. Task chuyển sang trạng thái Suspended và chờ task khác xóa"
+        ],
+        correctIndex: 1,
+        explanation: "Khi gọi vTaskDelete(NULL) (xóa chính mình), kernel xóa task khỏi ready/blocked list ngay lập tức, scheduler chọn task khác chạy. Bộ nhớ TCB và stack chỉ được free bởi idle task khi nó chạy (để tránh race condition)."
+    },
+    {
+        question: "Câu 116. Trong RTOS, timer software giúp giảm tải cho thành phần nào của hệ thống?",
+        options: [
+            "A. CPU (giảm số lần context switch)",
+            "B. Hardware timer (chỉ cần 1 hardware timer/tick cho nhiều software timer)",
+            "C. Memory (giảm kích thước stack của task)",
+            "D. ISR (giảm thời gian xử lý ngắt)"
+        ],
+        correctIndex: 1,
+        explanation: "Software timer trong FreeRTOS chỉ cần 1 hardware timer (thường là SysTick) + timer daemon task để quản lý hàng trăm software timer. Callback chạy trong task context thay vì ISR, giúp tiết kiệm hardware timer quý giá."
+    },
+    {
+        question: "Câu 117. Với hệ thống IoT thời gian thực, tác vụ nào nên được ưu tiên cao nhất?",
+        options: [
+            "A. Task gửi dữ liệu lên cloud (MQTT/HTTP)",
+            "B. Task giao diện người dùng (LCD/LED)",
+            "C. Task xử lý dữ liệu cảm biến/actuator thời gian thực (control loop, alarm)",
+            "D. Task logging dữ liệu lịch sử"
+        ],
+        correctIndex: 2,
+        explanation: "Trong IoT real-time, task có deadline chặt chẽ nhất (sensor sampling, control loop, safety-critical) phải có priority cao nhất để đảm bảo tính xác thực thời gian. Các task cloud/UI/logging có thể delay mà không ảnh hưởng tính real-time."
+    },
+    {
+        question: "Câu 118. Vì sao ISR trong RTOS cần được viết ngắn gọn tối đa?",
+        options: [
+            "A. Để tiết kiệm bộ nhớ RAM",
+            "B. Để giảm latency của các interrupt khác và giữ hệ thống responsive, tránh miss deadline",
+            "C. Để dễ debug code trong ISR",
+            "D. Vì RTOS không cho phép ISR dài"
+        ],
+        correctIndex: 1,
+        explanation: "ISR chạy với interrupt disabled (hoặc priority cao), nên nếu dài sẽ làm tăng latency của các interrupt khác, gây jitter lớn, miss deadline của task real-time. Best practice là chỉ set flag hoặc queue data, offload công việc sang task."
+    },
+    {
+        question: "Câu 119. Trong FreeRTOS, stack overflow của task thường gây hậu quả gì?",
+        options: [
+            "A. Task tự động chuyển sang suspended state",
+            "B. Gây corruption bộ nhớ, hard fault hoặc hành vi không xác định (undefined behavior)",
+            "C. Idle task tự động mở rộng stack cho task đó",
+            "D. Kernel sẽ gọi vTaskDelete() tự động"
+        ],
+        correctIndex: 1,
+        explanation: "Stack overflow ghi đè lên bộ nhớ lân cận (TCB, heap, stack khác), dẫn đến crash, hard fault hoặc hành vi lạ. FreeRTOS có configCHECK_FOR_STACK_OVERFLOW để gọi hook function khi phát hiện, nhưng nếu không enable thì hậu quả rất nghiêm trọng."
+    },
+    {
+        question: "Câu 120. Một hệ thống có quá nhiều task nhỏ sẽ dẫn đến overhead lớn chủ yếu do nguyên nhân nào?",
+        options: [
+            "A. Tăng tiêu thụ bộ nhớ RAM (mỗi task cần stack riêng)",
+            "B. Overhead context switching (chuyển task) quá cao",
+            "C. Dễ xảy ra deadlock và priority inversion",
+            "D. Scheduler phải tính toán priority liên tục"
+        ],
+        correctIndex: 1,
+        explanation: "Mỗi lần chuyển task (context switch) tốn CPU time đáng kể (save/restore register, TCB…). Quá nhiều task nhỏ → scheduler phải switch rất thường xuyên → overhead lớn, giảm hiệu suất tổng thể dù mỗi task làm việc ít."
+    },
+    {
+        question: "Câu 121. Tickless mode trong RTOS giúp cải thiện yếu tố nào quan trọng nhất?",
+        options: [
+            "A. Tăng tốc độ xử lý và throughput của hệ thống",
+            "B. Giảm tiêu thụ năng lượng (power consumption)",
+            "C. Cải thiện độ chính xác tuyệt đối của timer",
+            "D. Giảm độ trễ (latency) của mọi task"
+        ],
+        correctIndex: 1,
+        explanation: "Tickless mode (hay tick-less idle) loại bỏ interrupt tick định kỳ, chỉ thức dậy CPU khi có timer event thực sự cần thiết. Nhờ đó CPU có thể ngủ sâu và lâu hơn, tiết kiệm năng lượng rất lớn – đây là lợi ích quan trọng nhất trong các thiết bị nhúng chạy pin."
+    },
+    {
+        question: "Câu 122. Trong RTOS, synchronization giữa các task nhằm mục đích gì?",
+        options: [
+            "A. Tăng tốc độ thực thi của từng task riêng lẻ",
+            "B. Tránh race condition và bảo vệ tài nguyên chia sẻ",
+            "C. Đồng bộ thời gian chính xác giữa các task",
+            "D. Giảm dung lượng bộ nhớ RAM sử dụng"
+        ],
+        correctIndex: 1,
+        explanation: "Synchronization (mutex, semaphore, critical section…) đảm bảo chỉ một task truy cập tài nguyên chia sẻ (biến toàn cục, peripheral…) tại một thời điểm, ngăn chặn race condition và giữ tính nhất quán dữ liệu."
+    },
+    {
+        question: "Câu 123. Nếu hai task cùng truy cập biến toàn cục mà không có cơ chế bảo vệ, lỗi nào dễ xảy ra nhất?",
+        options: [
+            "A. Deadlock",
+            "B. Priority inversion",
+            "C. Race condition (dữ liệu bị hỏng hoặc không nhất quán)",
+            "D. Stack overflow"
+        ],
+        correctIndex: 2,
+        explanation: "Không có cơ chế bảo vệ (mutex, semaphore…), hai task có thể đọc/ghi biến cùng lúc → kết quả cuối cùng phụ thuộc vào thứ tự thực thi ngẫu nhiên → race condition, dẫn đến dữ liệu sai lệch hoặc crash."
+    },
+    {
+        question: "Câu 124. Một task đang delay 100ms sẽ thuộc trạng thái nào trong khoảng thời gian delay?",
+        options: [
+            "A. Running",
+            "B. Ready",
+            "C. Blocked (Waiting)",
+            "D. Suspended"
+        ],
+        correctIndex: 2,
+        explanation: "Khi gọi hàm delay (vTaskDelay, osDelay…), task chuyển sang trạng thái Blocked. Scheduler sẽ không đưa task này vào Ready queue cho đến khi hết thời gian delay."
+    },
+    {
+        question: "Câu 125. RTOS đặc biệt cần thiết với ứng dụng nào nhất?",
+        options: [
+            "A. Ứng dụng web server thông thường",
+            "B. Hệ thống điều khiển thời gian thực nghiêm ngặt (hard real-time)",
+            "C. Ứng dụng desktop đa nhiệm thông thường",
+            "D. Game mobile không yêu cầu thời gian thực"
+        ],
+        correctIndex: 1,
+        explanation: "RTOS được thiết kế để đảm bảo deadline (thời hạn cứng) luôn được đáp ứng với độ jitter thấp – rất quan trọng trong ô tô (airbag, ABS), y tế, công nghiệp, robot… Những ứng dụng này không chấp nhận được việc bỏ lỡ deadline."
+    },
+    {
+        question: "Câu 126. Trong hệ đa nhiệm RTOS, throughput và latency thường có mối quan hệ như thế nào?",
+        options: [
+            "A. Tăng throughput thì latency tự động giảm",
+            "B. Thường có quan hệ trade-off (cải thiện cái này thì cái kia giảm)",
+            "C. Hai yếu tố hoàn toàn độc lập",
+            "D. RTOS luôn tối ưu cả hai cùng lúc"
+        ],
+        correctIndex: 1,
+        explanation: "Để giảm latency (phản hồi nhanh), RTOS thường ưu tiên task quan trọng → một số task khác phải chờ lâu hơn → throughput tổng thể (số công việc hoàn thành trong đơn vị thời gian) có thể giảm. Đây là trade-off kinh điển trong RTOS."
+    },
+    {
+        question: "Câu 127. Nếu scheduler bị dừng hoàn toàn trong RTOS, hệ thống sẽ có đặc điểm gì?",
+        options: [
+            "A. Hệ thống ngay lập tức crash",
+            "B. Không còn context switch, task đang chạy sẽ chiếm CPU liên tục",
+            "C. Tất cả task chuyển sang trạng thái Ready",
+            "D. Latency giảm mạnh"
+        ],
+        correctIndex: 1,
+        explanation: "Scheduler dừng (vTaskSuspendAll hoặc tương đương) → không còn preemption và time-slicing. Task hiện tại chạy đến khi tự nhường CPU hoặc scheduler được resumed lại."
+    },
+    {
+        question: "Câu 128. Trong hệ điều khiển thời gian thực, jitter dùng để mô tả điều gì?",
+        options: [
+            "A. Thời gian trung bình để task hoàn thành",
+            "B. Sự biến thiên (variation) của thời gian phản hồi hoặc khoảng cách giữa các lần thực thi",
+            "C. Tổng thời gian delay của toàn hệ thống",
+            "D. Số lượng task đang chạy cùng lúc"
+        ],
+        correctIndex: 1,
+        explanation: "Jitter là độ lệch (variation) của thời gian thực thi so với giá trị mong muốn. Trong hard real-time, jitter càng thấp càng tốt vì hệ thống cần tính dự đoán cao."
+    },
+    {
+        question: "Câu 129. Trong Flutter kết hợp MQTT, việc subscribe bằng stream mang lại lợi ích gì?",
+        options: [
+            "A. Giúp code chạy đồng bộ, dễ debug hơn",
+            "B. Cho phép xử lý dữ liệu theo kiểu reactive, dễ kết hợp với StreamBuilder để cập nhật UI realtime mà không blocking main thread",
+            "C. Giảm dung lượng bộ nhớ so với callback thông thường",
+            "D. Tự động reconnect MQTT mà không cần code thêm"
+        ],
+        correctIndex: 1,
+        explanation: "MQTT client (mqtt_client package) trả về Stream khi subscribe. Stream kết hợp StreamBuilder giúp Flutter rebuild UI tự động mỗi khi có message mới, code ngắn gọn, reactive và không block UI thread."
+    },
+    {
+        question: "Câu 130. Vì sao MQTT subscribe hiệu quả hơn polling trong hệ IoT realtime?",
+        options: [
+            "A. Polling có thể cache dữ liệu tốt hơn",
+            "B. Subscribe là mô hình push (server đẩy dữ liệu khi có sự kiện) → giảm latency, tiết kiệm băng thông và năng lượng pin; polling là pull liên tục (client hỏi mãi)",
+            "C. Polling ít tốn RAM hơn",
+            "D. MQTT subscribe chỉ dùng được với Wi-Fi, không dùng được với 4G/5G"
+        ],
+        correctIndex: 1,
+        explanation: "Polling yêu cầu client gửi request định kỳ (dù không có dữ liệu mới) → lãng phí băng thông, tăng độ trễ và tiêu hao pin. MQTT publish-subscribe là event-driven: server chỉ gửi khi có dữ liệu thực sự → rất phù hợp cho IoT realtime, low-power."
+    },
+    {
+        question: "Câu 131. Nếu app publish lệnh bật LED nhưng UI không phản ánh đúng trạng thái thiết bị thì nguyên nhân hợp lý nhất là gì?",
+        options: [
+            "A. Ứng dụng Flutter bị lỗi kết nối mạng",
+            "B. MQTT client không hỗ trợ publish QoS 1",
+            "C. App chỉ publish lệnh mà chưa subscribe topic trạng thái phản hồi từ thiết bị",
+            "D. Broker MQTT không forward message"
+        ],
+        correctIndex: 2,
+        explanation: "Trong IoT, publish lệnh chỉ là one-way. Để UI đồng bộ, app phải subscribe topic state của thiết bị để nhận feedback khi thiết bị thực sự thay đổi trạng thái."
+    },
+    {
+        question: "Câu 132. Trong hệ Flutter + MQTT, vì sao dữ liệu nhận từ broker thường cần parse trước khi xử lý?",
+        options: [
+            "A. Để tăng tốc độ truyền dữ liệu",
+            "B. Vì payload thường là chuỗi JSON hoặc bytes cần chuyển thành object Dart",
+            "C. Để tránh lỗi bảo mật",
+            "D. Vì MQTT chỉ hỗ trợ text thuần"
+        ],
+        correctIndex: 1,
+        explanation: "MQTT payload là binary hoặc string (thường JSON). Phải parse (jsonDecode) để chuyển thành Map hoặc model class trước khi dùng trong logic và UI."
+    },
+    {
+        question: "Câu 133. Trong hệ thống IoT dùng MQTT, cơ chế nào giúp UI phản ánh đúng trạng thái thực của thiết bị?",
+        options: [
+            "A. Sử dụng QoS = 2 cho mọi message",
+            "B. Subscribe topic trạng thái (state topic) và cập nhật UI realtime khi nhận message",
+            "C. Sử dụng Last Will and Testament (LWT)",
+            "D. Publish retained message từ app"
+        ],
+        correctIndex: 1,
+        explanation: "Thiết bị publish trạng thái lên topic state, app subscribe và update UI (qua state management) để đồng bộ với thực tế."
+    },
+    {
+        question: "Câu 134. Điểm mạnh lớn nhất của Flutter trong phát triển ứng dụng IoT đa nền tảng là gì?",
+        options: [
+            "A. Tốc độ chạy nhanh hơn native",
+            "B. Single codebase, chạy được trên iOS, Android, Web, Desktop",
+            "C. Hỗ trợ MQTT tốt hơn các framework khác",
+            "D. Tiêu tốn ít pin hơn"
+        ],
+        correctIndex: 1,
+        explanation: "Flutter cho phép viết một lần, deploy nhiều nền tảng với cùng codebase và UI nhất quán, tiết kiệm thời gian lớn nhất cho app IoT cần hỗ trợ mobile + web."
+    },
+    {
+        question: "Câu 135. Trong Flutter, cơ chế nào thường được dùng để cập nhật giao diện khi dữ liệu MQTT thay đổi?",
+        options: [
+            "A. setState() kết hợp với polling",
+            "B. ChangeNotifier / Provider hoặc StreamBuilder với MQTT stream",
+            "C. Chỉ dùng InheritedWidget",
+            "D. Sử dụng AnimationController"
+        ],
+        correctIndex: 1,
+        explanation: "Khi MQTT nhận message, notifyListeners() hoặc StreamBuilder sẽ rebuild UI tự động theo dữ liệu mới."
+    },
+    {
+        question: "Câu 136. Trong giao thức MQTT, thành phần nào chịu trách nhiệm nhận bản tin từ publisher và phân phối đến subscriber?",
+        options: [
+            "A. Publisher",
+            "B. Subscriber",
+            "C. Broker",
+            "D. Client"
+        ],
+        correctIndex: 2,
+        explanation: "Broker là trung tâm, nhận message từ publisher và route đến các subscriber theo topic."
+    },
+    {
+        question: "Câu 137. Một cảm biến nhiệt độ gửi dữ liệu mỗi 5 giây bằng giao thức MQTT với QoS = 0. Điều gì có thể xảy ra?",
+        options: [
+            "A. Mọi message đều được đảm bảo đến đích chính xác một lần",
+            "B. Message có thể bị mất nếu mạng không ổn định",
+            "C. Message sẽ được lưu trữ lại khi disconnect",
+            "D. Broker sẽ xác nhận từng gói tin"
+        ],
+        correctIndex: 1,
+        explanation: "QoS 0 = “At most once” – fire and forget, không có acknowledgment, nên dữ liệu telemetry có thể bị mất nếu mạng không ổn định."
+    },
+    {
+        question: "Câu 138. Địa chỉ IPv6 có độ dài bao nhiêu bit?",
+        options: [
+            "A. 32 bit",
+            "B. 64 bit",
+            "C. 128 bit",
+            "D. 256 bit"
+        ],
+        correctIndex: 2,
+        explanation: "IPv6 dùng 128 bit để cung cấp không gian địa chỉ khổng lồ (2^128), giải quyết hạn chế của IPv4 (32 bit)."
+    },
+    {
+        question: "Câu 139. Trong hệ thống IoT, thiết bị nào sau đây hoạt động như actuator?",
+        options: [
+            "A. Cảm biến DHT11 (nhiệt độ, độ ẩm)",
+            "B. Relay module điều khiển thiết bị điện",
+            "C. Cảm biến ánh sáng LDR",
+            "D. Module GPS"
+        ],
+        correctIndex: 1,
+        explanation: "Actuator là thiết bị thực thi hành động (bật/tắt, di chuyển...). Relay là actuator điển hình, dùng để điều khiển load điện theo lệnh."
+    },
+    {
+        question: "Câu 140. Giao thức nào phù hợp nhất cho thiết bị IoT tài nguyên hạn chế và yêu cầu băng thông thấp?",
+        options: [
+            "A. HTTP/HTTPS",
+            "B. MQTT",
+            "C. FTP",
+            "D. SSH"
+        ],
+        correctIndex: 1,
+        explanation: "MQTT nhẹ, overhead thấp, mô hình publish/subscribe, hỗ trợ QoS linh hoạt, rất phù hợp cho thiết bị constrained (low-power, low-bandwidth) như ESP8266, Arduino."
+    },
+    {
+        question: "Câu 141. Một cảm biến đo áp suất xuất tín hiệu analog từ 0V đến 3.3V. Kết nối cảm biến này vào bộ ADC 10-bit của vi điều khiển (điện áp tham chiếu Vref = 3.3V). Nếu giá trị số đọc được từ ADC là 512, điện áp hiện tại của cảm biến là bao nhiêu?",
+        options: [
+            "A. 1.65 V",
+            "B. 1.65 mV",
+            "C. 3.3 V",
+            "D. 0 V"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: ADC 10-bit có 1024 mức phân giải (0-1023), công thức tính điện áp là (giá trị ADC / 1024) × Vref = (512 / 1024) × 3.3 = 1.65 V."
+    },
+    {
+        question: "Câu 142. Một ultrasonic sensor đo được thời gian phản hồi 5.8 ms. Biết vận tốc âm thanh khoảng 340 m/s, khoảng cách đến vật cản gần đúng là bao nhiêu?",
+        options: [
+            "A. 0.986 m",
+            "B. 1.972 m",
+            "C. 0.5 m",
+            "D. 2 m"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Khoảng cách đến vật cản = (vận tốc âm thanh × thời gian phản hồi) / 2 = (340 × 0.0058) / 2 ≈ 0.986 m."
+    },
+    {
+        question: "Câu 143. Thách thức lớn nhất về bảo mật trong IoT là gì?",
+        options: [
+            "A. Giới hạn tài nguyên tính toán trên thiết bị IoT",
+            "B. Tốc độ kết nối Internet chậm",
+            "C. Chi phí phần cứng cao",
+            "D. Khó khăn trong việc thu thập dữ liệu"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Thiết bị IoT thường có CPU/RAM/pin hạn chế, khiến việc triển khai các biện pháp bảo mật mạnh (mã hóa phức tạp, firewall…) trở nên khó khăn – đây là thách thức lớn nhất về bảo mật IoT."
+    },
+    {
+        question: "Câu 144. Trong kiến trúc IoT, thiết bị nào thường đóng vai trò chuyển đổi dữ liệu giữa mạng cảm biến cục bộ và Internet?",
+        options: [
+            "A. IoT Gateway",
+            "B. Sensor node",
+            "C. Cloud server",
+            "D. Actuator"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: IoT Gateway đóng vai trò chuyển đổi giao thức và dữ liệu giữa mạng cảm biến cục bộ (Zigbee, LoRa, Bluetooth…) và Internet (WiFi/Ethernet)."
+    },
+    {
+        question: "Câu 145. Nếu MQTT Keep Alive được cấu hình là 90 giây, broker sẽ xem client mất kết nối sau khoảng thời gian tối đa nào nếu không nhận bất kỳ gói tin nào?",
+        options: [
+            "A. 135 giây",
+            "B. 90 giây",
+            "C. 180 giây",
+            "D. 45 giây"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Theo chuẩn MQTT, broker sẽ xem client mất kết nối nếu không nhận bất kỳ gói tin nào trong thời gian 1.5 × Keep Alive = 1.5 × 90 = 135 giây."
+    },
+    {
+        question: "Câu 146. Trong ESP8266, chế độ chân GPIO ở trạng thái High-Z mang ý nghĩa gì?",
+        options: [
+            "A. Chân GPIO không được kích hoạt (không drive high/low), ở trạng thái trở kháng cao",
+            "B. Chân GPIO ở mức cao (High)",
+            "C. Chân GPIO ở mức thấp (Low)",
+            "D. Chân GPIO đang output dữ liệu"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: High-Z (High Impedance) là trạng thái trở kháng cao (floating), chân GPIO không drive điện áp cao/thấp mà ở trạng thái “ngắt” – thường dùng khi cấu hình input hoặc tri-state."
+    },
+    {
+        question: "Câu 147. Thành phần nào trong mô hình Publish/Subscribe của MQTT giúp giảm sự phụ thuộc trực tiếp giữa các thiết bị IoT?",
+        options: [
+            "A. Broker (máy chủ trung gian)",
+            "B. Publisher",
+            "C. Subscriber",
+            "D. Topic"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Broker làm trung gian trong mô hình Publish/Subscribe, giúp publisher và subscriber không cần kết nối trực tiếp với nhau, từ đó giảm sự phụ thuộc."
+    },
+    {
+        question: "Câu 148. Khi cảm biến siêu âm HC-SR04 nhận Echo trong thời gian 20 ms, khoảng cách đo được gần đúng là bao nhiêu?",
+        options: [
+            "A. 3.4 m",
+            "B. 6.8 m",
+            "C. 1.7 m",
+            "D. 2.0 m"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Khoảng cách = (vận tốc âm thanh × thời gian Echo) / 2 = (340 × 0.02) / 2 = 3.4 m."
+    },
+    {
+        question: "Câu 149. Trong giao thức HTTP truyền thống, nguyên nhân chính làm tiêu thụ năng lượng cao hơn MQTT trên thiết bị IoT là gì?",
+        options: [
+            "A. HTTP yêu cầu kết nối TCP handshake và overhead header lớn hơn, thường phải polling",
+            "B. MQTT sử dụng bandwidth cao hơn",
+            "C. HTTP nhẹ hơn MQTT",
+            "D. MQTT yêu cầu server luôn online"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: HTTP là giao thức request-response, phải thực hiện handshake TCP nhiều lần và có header lớn, dẫn đến tiêu thụ năng lượng cao hơn rất nhiều so với MQTT (nhẹ, persistent connection)."
+    },
+    {
+        question: "Câu 150. Một client MQTT subscribe topic home/room1/#, client này sẽ nhận dữ liệu nào sau đây?",
+        options: [
+            "A. Tất cả các topic bắt đầu bằng “home/room1/”",
+            "B. Chỉ topic chính xác “home/room1”",
+            "C. Các topic “home/room1” và “home/room2”",
+            "D. Tất cả topic chứa “room1”"
+        ],
+        correctIndex: 0,
+        explanation: "Giải thích: Wildcard “#” là multi-level wildcard, nên subscribe home/room1/# sẽ nhận mọi message dưới nhánh home/room1/ (ví dụ: home/room1/temp, home/room1/light/status…)."
+    },
+    {
+        question: "Câu 151. Trong hệ thống IoT cloud-based, ưu điểm lớn nhất của việc xử lý dữ liệu trên cloud là gì?",
+        options: [
+            "A. Giảm độ trễ truyền dữ liệu",
+            "B. Tiết kiệm năng lượng cho thiết bị IoT",
+            "C. Khả năng mở rộng quy mô lớn và sức mạnh tính toán mạnh mẽ",
+            "D. Tăng tính bảo mật dữ liệu cục bộ"
+        ],
+        correctIndex: 2,
+        explanation: "Cloud cung cấp tài nguyên tính toán mạnh (CPU/GPU mạnh, storage lớn), có thể xử lý big data, machine learning phức tạp mà thiết bị IoT hạn chế về tài nguyên không làm được. Các ưu điểm khác như latency thực ra cloud kém hơn edge."
+    },
+    {
+        question: "Câu 152. Trong giao thức I2C, điều kiện START xảy ra khi nào?",
+        options: [
+            "A. Khi SCL chuyển từ cao xuống thấp trong khi SDA cao",
+            "B. Khi SDA chuyển từ cao xuống thấp trong khi SCL cao",
+            "C. Khi cả SDA và SCL đều chuyển sang thấp cùng lúc",
+            "D. Khi SCL chuyển từ thấp lên cao trong khi SDA thấp"
+        ],
+        correctIndex: 1,
+        explanation: "Điều kiện START trong I2C là SDA (data line) chuyển từ HIGH sang LOW trong khi SCL (clock line) đang HIGH. Đây là tín hiệu đặc biệt để bắt đầu giao tiếp."
+    },
+    {
+        question: "Câu 153. Trong SPI, tín hiệu nào dùng để chọn slave cụ thể?",
+        options: [
+            "A. SCK (Serial Clock)",
+            "B. MOSI (Master Out Slave In)",
+            "C. SS/CS (Slave Select/Chip Select)",
+            "D. MISO (Master In Slave Out)"
+        ],
+        correctIndex: 2,
+        explanation: "Tín hiệu SS (Slave Select) hoặc CS (Chip Select) được master kéo thấp để chọn slave cụ thể giao tiếp. Mỗi slave có một SS riêng."
+    },
+    {
+        question: "Câu 154. UART khác SPI ở đặc điểm nào sau đây?",
+        options: [
+            "A. UART yêu cầu nhiều dây hơn SPI",
+            "B. UART là giao thức đồng bộ, SPI là không đồng bộ",
+            "C. UART không cần đường clock riêng, là giao thức không đồng bộ",
+            "D. UART chỉ hỗ trợ half-duplex"
+        ],
+        correctIndex: 2,
+        explanation: "UART là asynchronous (không đồng bộ), không cần clock line (chỉ TX, RX), dùng baud rate thỏa thuận trước. SPI là synchronous, có SCK clock."
+    },
+    {
+        question: "Câu 155. Trong I2C, mục đích của điện trở pull-up là gì?",
+        options: [
+            "A. Tăng tốc độ truyền dữ liệu",
+            "B. Giữ đường SDA và SCL ở mức logic cao khi không có thiết bị kéo thấp",
+            "C. Giảm tiêu thụ điện",
+            "D. Bảo vệ khỏi nhiễu điện từ"
+        ],
+        correctIndex: 1,
+        explanation: "I2C dùng open-drain/open-collector, nên cần pull-up resistor để kéo SDA/SCL lên HIGH mặc định. Khi device kéo LOW thì truyền bit 0."
+    },
+    {
+        question: "Câu 156. Nếu SPI hoạt động mode full-duplex, điều gì xảy ra?",
+        options: [
+            "A. Chỉ master truyền dữ liệu, slave không trả lời",
+            "B. Dữ liệu được truyền và nhận đồng thời qua MOSI và MISO",
+            "C. Chỉ hỗ trợ truyền một chiều",
+            "D. Yêu cầu 4 dây clock"
+        ],
+        correctIndex: 1,
+        explanation: "SPI full-duplex cho phép master gửi data qua MOSI và nhận data từ slave qua MISO trong cùng một clock cycle, truyền song song hai chiều."
+    },
+    {
+        question: "Câu 157. Trong UART frame chuẩn, thành phần nào báo bắt đầu truyền dữ liệu?",
+        options: [
+            "A. Stop bit",
+            "B. Parity bit",
+            "C. Start bit",
+            "D. Data bits"
+        ],
+        correctIndex: 2,
+        explanation: "Start bit (thường là mức LOW) là bit đầu tiên trong frame UART, báo hiệu bắt đầu khung dữ liệu để receiver đồng bộ."
+    },
+    {
+        question: "Câu 158. Một bus I2C có nhiều thiết bị nhưng địa chỉ bị trùng nhau sẽ gây hiện tượng gì?",
+        options: [
+            "A. Tốc độ truyền chậm lại",
+            "B. Xung đột dữ liệu, bus bị treo hoặc dữ liệu bị hỏng",
+            "C. Tự động phân bổ địa chỉ mới",
+            "D. Không ảnh hưởng gì"
+        ],
+        correctIndex: 1,
+        explanation: "Khi nhiều slave có cùng địa chỉ, chúng sẽ cùng đáp ứng và kéo SDA thấp cùng lúc dẫn đến xung đột (bus contention), gây lỗi dữ liệu hoặc bus lockup."
+    },
+    {
+        question: "Câu 159. Trong SPI, nếu master tạo clock 1 MHz thì ý nghĩa là gì?",
+        options: [
+            "A. Tốc độ truyền dữ liệu là 1 byte mỗi giây",
+            "B. Tốc độ bit rate là 1 Mbit/s",
+            "C. Chu kỳ clock là 1 microsecond",
+            "D. Slave phải trả lời trong 1 ms"
+        ],
+        correctIndex: 1,
+        explanation: "Clock frequency 1 MHz nghĩa là master sinh 1 triệu xung clock/giây, mỗi xung clock truyền 1 bit, nên data rate 1 Mbps."
+    },
+    {
+        question: "Câu 160. Trong hệ thống AIoT, lý do chính để triển khai Edge AI thay vì xử lý hoàn toàn trên Cloud là gì?",
+        options: [
+            "A. Tăng chi phí phần cứng",
+            "B. Giảm độ trễ và tiết kiệm băng thông mạng",
+            "C. Phụ thuộc hoàn toàn vào kết nối internet",
+            "D. Tăng dung lượng lưu trữ cloud"
+        ],
+        correctIndex: 1,
+        explanation: "Edge AI xử lý dữ liệu ngay tại thiết bị, giảm latency (thời gian thực), giảm lượng dữ liệu gửi lên cloud (tiết kiệm băng thông, chi phí), tăng privacy và hoạt động offline."
+    },
+    {
+        question: "Câu 161. Trong mô hình học máy giám sát (Supervised Learning), thành phần nào bắt buộc phải có trong tập dữ liệu huấn luyện?",
+        options: [
+            "A. Chỉ có dữ liệu đầu vào (features)",
+            "B. Nhãn (labels) cho mỗi mẫu dữ liệu",
+            "C. Dữ liệu kiểm tra (test set)",
+            "D. Mô hình đã được huấn luyện sẵn"
+        ],
+        correctIndex: 1,
+        explanation: "Supervised Learning yêu cầu tập huấn luyện phải có cả features (đầu vào) và labels (nhãn/output mong muốn) để mô hình học cách ánh xạ từ input sang output. Không có labels thì không thể gọi là supervised."
+    },
+    {
+        question: "Câu 162. Một hệ thống camera AI phát hiện người xâm nhập theo thời gian thực thường ưu tiên dùng CNN vì đặc điểm nào?",
+        options: [
+            "A. Tốc độ xử lý chuỗi thời gian nhanh hơn RNN",
+            "B. Khả năng trích xuất đặc trưng không gian (spatial features) từ hình ảnh rất hiệu quả",
+            "C. Tiêu tốn ít bộ nhớ hơn so với các mô hình Transformer",
+            "D. Dễ huấn luyện trên dữ liệu văn bản"
+        ],
+        correctIndex: 1,
+        explanation: "Camera xử lý hình ảnh 2D, CNN sử dụng convolution layers để tự động trích xuất đặc trưng không gian (edges, textures, shapes) cực kỳ hiệu quả và phù hợp với dữ liệu hình ảnh, giúp phát hiện thời gian thực nhanh và chính xác."
+    },
+    {
+        question: "Câu 163. Trong AIoT, nếu cảm biến gửi dữ liệu sai lệch hoặc nhiễu lớn, hậu quả nghiêm trọng nhất với mô hình AI là gì?",
+        options: [
+            "A. Tăng thời gian huấn luyện",
+            "B. Mô hình AI đưa ra dự đoán sai lệch nghiêm trọng (garbage in – garbage out)",
+            "C. Thiết bị IoT tiêu tốn nhiều pin hơn",
+            "D. Cần phải thay cảm biến mới"
+        ],
+        correctIndex: 1,
+        explanation: "Mô hình AI chỉ học từ dữ liệu đầu vào. Dữ liệu sai lệch/nhiễu lớn dẫn đến mô hình học sai quy luật, đưa ra quyết định hoàn toàn sai (false alarm hoặc miss detection), hậu quả nghiêm trọng nhất trong AIoT (an ninh, y tế, công nghiệp)."
+    },
+    {
+        question: "Câu 164. Trong quá trình huấn luyện Deep Learning cho IoT, hiện tượng Overfitting xảy ra khi nào?",
+        options: [
+            "A. Mô hình có độ chính xác cao trên cả tập train và validation",
+            "B. Mô hình học thuộc lòng noise và chi tiết của tập train, độ chính xác trên validation/test giảm mạnh",
+            "C. Loss function giảm đều trên mọi epoch",
+            "D. Mô hình dưới phức tạp so với dữ liệu"
+        ],
+        correctIndex: 1,
+        explanation: "Overfitting xảy ra khi mô hình quá phức tạp, ghi nhớ cả nhiễu của tập huấn luyện thay vì học quy luật chung, dẫn đến hiệu suất rất tốt trên train nhưng kém trên dữ liệu mới (validation/test)."
+    },
+    {
+        question: "Câu 165. Vì sao TensorFlow Lite thường được dùng trên thiết bị IoT thay vì TensorFlow đầy đủ?",
+        options: [
+            "A. Hỗ trợ huấn luyện mô hình trực tiếp trên edge",
+            "B. Kích thước mô hình nhỏ, tối ưu bộ nhớ và tốc độ suy luận trên thiết bị tài nguyên hạn chế",
+            "C. Có giao diện đồ họa đẹp hơn",
+            "D. Hỗ trợ GPU mạnh hơn TensorFlow gốc"
+        ],
+        correctIndex: 1,
+        explanation: "TensorFlow Lite (TFLite) được tối ưu hóa đặc biệt cho edge devices (microcontroller, ESP32, mobile) với kích thước mô hình nhỏ, ít RAM/Flash, chạy nhanh inference mà không cần kết nối cloud."
+    },
+    {
+        question: "Câu 166. Trong Cooperative Scheduler, điều gì xảy ra nếu một task chứa vòng lặp vô hạn mà không gọi yield(), delay() hoặc return?",
+        options: [
+            "A. Hệ thống tự động reset task",
+            "B. Task đó chiếm toàn bộ CPU, các task khác bị starvation (không bao giờ được chạy)",
+            "C. Scheduler tự động chuyển sang task khác sau 1 tick",
+            "D. Task sẽ bị xóa khỏi danh sách sẵn sàng"
+        ],
+        correctIndex: 1,
+        explanation: "Cooperative Scheduler (non-preemptive) chỉ chuyển task khi task hiện tại chủ động nhường CPU (yield/delay/return). Vòng lặp vô hạn không nhường → task độc chiếm CPU mãi."
+    },
+    {
+        question: "Câu 167. Trong RTOS priority-based preemptive scheduling, nguyên nhân chính gây ra hiện tượng “priority inversion” là gì?",
+        options: [
+            "A. Task cao ưu tiên chạy quá lâu",
+            "B. Task thấp ưu tiên đang giữ shared resource (mutex/semaphore) mà task cao ưu tiên cần",
+            "C. Scheduler không có cơ chế aging",
+            "D. Queue đầy"
+        ],
+        correctIndex: 1,
+        explanation: "Priority inversion xảy ra khi task ưu tiên thấp giữ resource chung, task ưu tiên cao phải chờ, trong khi task trung bình có thể preempt task thấp → task cao bị delay ngoài mong đợi."
+    },
+    {
+        question: "Câu 168. Một message queue trong RTOS được cấu hình length = 5 và hiện đã đầy. Khi một task ưu tiên thấp tiếp tục ghi dữ liệu vào queue, điều gì đúng nhất?",
+        options: [
+            "A. Dữ liệu mới sẽ ghi đè dữ liệu cũ nhất",
+            "B. Task sẽ bị block (chờ) cho đến khi có slot trống (nếu timeout > 0)",
+            "C. Queue tự động tăng kích thước lên 6",
+            "D. Task ưu tiên thấp sẽ bị scheduler tạm dừng ngay lập tức"
+        ],
+        correctIndex: 1,
+        explanation: "Trong FreeRTOS (và hầu hết RTOS), khi queue đầy, hàm xQueueSend() với timeout > 0 sẽ đưa task vào trạng thái Blocked cho đến khi có chỗ trống hoặc timeout hết hạn."
+    },
+    {
+        question: "Câu 169. Trong hệ hard real-time sử dụng thuật toán Rate Monotonic (RM), task nào sẽ có mức ưu tiên cao hơn?",
+        options: [
+            "A. Task có thời gian thực thi (execution time) dài hơn",
+            "B. Task có chu kỳ (period) ngắn hơn",
+            "C. Task có deadline dài hơn",
+            "D. Task được tạo sau cùng"
+        ],
+        correctIndex: 1,
+        explanation: "Rate Monotonic Scheduling gán ưu tiên tĩnh theo chu kỳ: task có period (chu kỳ lặp lại) càng ngắn → ưu tiên càng cao (để đảm bảo đáp ứng deadline trong hard real-time)."
+    },
+    {
+        question: "Câu 170. Trong FreeRTOS trên ESP32, ý nghĩa chính của hàm xTaskCreatePinnedToCore() là gì?",
+        options: [
+            "A. Tạo task và tự động cân bằng tải giữa 2 core",
+            "B. Tạo task và ghim (pin) task đó chạy cố định trên một core cụ thể (0 hoặc 1)",
+            "C. Tạo task chỉ chạy ở chế độ privileged",
+            "D. Tạo task mà không cần stack"
+        ],
+        correctIndex: 1,
+        explanation: "ESP32 là dual-core. Hàm xTaskCreatePinnedToCore() cho phép lập trình viên chỉ định core (0 hoặc 1) mà task sẽ chạy cố định, tránh overhead chuyển core và kiểm soát tốt hơn việc phân bổ CPU."
+    },
+    {
+        question: "Câu 171. Trong hệ thống MQTT, cơ chế nào cho phép ứng dụng nhận dữ liệu cảm biến theo thời gian thực mà không cần gửi request liên tục?",
+        options: [
+            "A. Polling (liên tục gửi request)",
+            "B. Request-Response",
+            "C. Publish/Subscribe (Pub/Sub)",
+            "D. Peer-to-Peer trực tiếp"
+        ],
+        correctIndex: 2,
+        explanation: "MQTT sử dụng mô hình publish/subscribe, cho phép subscriber đăng ký topic và nhận dữ liệu ngay lập tức khi có message mới mà không cần polling."
+    },
+    {
+        question: "Câu 172. Điểm mạnh lớn nhất của Flutter trong phát triển ứng dụng IoT đa nền tảng là gì?",
+        options: [
+            "A. Tích hợp dễ dàng với phần cứng IoT",
+            "B. Hỗ trợ native performance trên mọi nền tảng với single codebase",
+            "C. Thư viện MQTT built-in mạnh mẽ",
+            "D. Chi phí phát triển thấp hơn các framework khác"
+        ],
+        correctIndex: 1,
+        explanation: "Flutter nổi bật với khả năng viết một codebase duy nhất chạy tốt trên Android, iOS, web, desktop với performance gần native và UI đẹp."
+    },
+    {
+        question: "Câu 173. Trong MQTT, nếu một bản tin được gửi với cờ \"Retain\" được bật (set to true), Broker sẽ làm gì?",
+        options: [
+            "A. Xóa bản tin ngay sau khi gửi",
+            "B. Lưu bản tin cuối cùng và gửi ngay cho các client mới subscribe topic đó",
+            "C. Gửi bản tin lặp lại định kỳ",
+            "D. Bỏ qua bản tin nếu không có subscriber"
+        ],
+        correctIndex: 1,
+        explanation: "Flag Retain=true khiến Broker lưu giữ (retain) message cuối cùng cho topic. Khi client mới subscribe, Broker sẽ gửi retained message ngay lập tức để client nhận được trạng thái mới nhất."
+    },
+    {
+        question: "Câu 174. Trong Flutter, cơ chế nào thường được dùng để cập nhật giao diện khi dữ liệu MQTT thay đổi?",
+        options: [
+            "A. setState() trực tiếp trong callback MQTT",
+            "B. StreamBuilder kết hợp với stream từ MQTT client",
+            "C. Chỉ dùng StatelessWidget",
+            "D. Polling dữ liệu định kỳ"
+        ],
+        correctIndex: 1,
+        explanation: "MQTT data thường được xử lý qua Stream, StreamBuilder sẽ rebuild UI tự động khi có data mới trên stream, hiệu quả và reactive."
+    },
+    {
+        question: "Câu 175. Vì sao QoS mức 1 thường được sử dụng trong hệ thống điều khiển thiết bị IoT?",
+        options: [
+            "A. Vì nó đảm bảo tin nhắn được giao đúng một lần (exactly once)",
+            "B. Vì nó cân bằng giữa độ tin cậy (ít nhất một lần) và overhead thấp hơn QoS 2",
+            "C. Vì nó nhanh nhất và không cần acknowledge",
+            "D. Vì nó chỉ dùng cho dữ liệu cảm biến không quan trọng"
+        ],
+        correctIndex: 1,
+        explanation: "QoS 1 (at least once) đảm bảo lệnh điều khiển không bị mất, có acknowledge, nhưng overhead thấp hơn QoS 2 (exactly once). Phù hợp cho control commands."
+    },
+    {
+        question: "Câu 176. Hai GPIO đều cấu hình output, một HIGH và một LOW nối trực tiếp với nhau sẽ gây hiện tượng gì?",
+        options: [
+            "A. Không có vấn đề gì",
+            "B. Ngắn mạch (short circuit), dòng điện lớn có thể làm hỏng GPIO hoặc chip",
+            "C. Tạo ra tín hiệu PWM",
+            "D. Input floating"
+        ],
+        correctIndex: 1,
+        explanation: "Kết nối hai output đối nghịch (HIGH vs LOW) tạo short circuit giữa nguồn và GND qua hai chân GPIO, gây dòng điện cao, nguy cơ hỏng."
+    },
+    {
+        question: "Câu 177. Floating input thường gây ra hậu quả nào trong hệ thống số?",
+        options: [
+            "A. Tiêu thụ điện năng thấp",
+            "B. Trạng thái logic không xác định, dễ bị nhiễu, đọc giá trị ngẫu nhiên",
+            "C. Luôn đọc giá trị LOW",
+            "D. Tăng tốc độ xử lý"
+        ],
+        correctIndex: 1,
+        explanation: "Input floating (không kết nối pull-up/pull-down) làm chân input “nổi”, rất nhạy với nhiễu điện từ, dẫn đến đọc giá trị 0/1 ngẫu nhiên và có thể gây tiêu thụ điện tăng."
+    },
+    {
+        question: "Câu 178. ADC 10-bit với Vref = 5V có độ phân giải gần đúng bao nhiêu?",
+        options: [
+            "A. 5V",
+            "B. Khoảng 4.88 mV (0.00488V)",
+            "C. 10 mV",
+            "D. 0.5V"
+        ],
+        correctIndex: 1,
+        explanation: "ADC 10-bit có 2¹⁰ = 1024 mức. Độ phân giải = Vref / 1024 = 5 / 1024 ≈ 0.0048828 V ≈ 4.88 mV."
+    },
+    {
+        question: "Câu 179. PWM duty cycle 20% ở mức 5V tạo ra điện áp trung bình gần đúng bao nhiêu?",
+        options: [
+            "A. 5V",
+            "B. 1V",
+            "C. 4V",
+            "D. 2V"
+        ],
+        correctIndex: 1,
+        explanation: "Điện áp trung bình = Duty cycle × Vpeak = 0.20 × 5V = 1V. (Giả sử tần số PWM đủ cao để lọc thành DC trung bình)."
+    },
+    {
+        question: "Câu 180. Sampling thấp hơn định lý Nyquist sẽ gây ra hiện tượng gì?",
+        options: [
+            "A. Oversampling",
+            "B. Aliasing (gập tần, méo tín hiệu)",
+            "C. Tăng độ chính xác",
+            "D. Giảm nhiễu"
+        ],
+        correctIndex: 1,
+        explanation: "Theo định lý Nyquist, tần số lấy mẫu phải ≥ 2 × tần số cao nhất của tín hiệu. Sampling thấp hơn gây aliasing, làm tần số cao xuất hiện như tần số thấp hơn, gây méo tín hiệu."
+    },
+    {
+        question: "Câu 181. Trạng thái High-Z chủ yếu được sử dụng để giải quyết vấn đề nào?",
+        options: [
+            "A. Tăng tốc độ xử lý tín hiệu",
+            "B. Giảm tiêu thụ điện",
+            "C. Cho phép nhiều thiết bị chia sẻ bus dữ liệu mà không gây xung đột",
+            "D. Chuyển đổi giữa analog và digital"
+        ],
+        correctIndex: 2,
+        explanation: "Trạng thái High-Z (high impedance) là trạng thái thứ ba trong logic tri-state. Khi ở High-Z, đầu ra của IC ở trạng thái “mở” (không drive bus), giúp nhiều driver có thể chia sẻ chung một đường bus mà không gây short circuit hoặc xung đột tín hiệu (bus contention)."
+    },
+    {
+        question: "Câu 182. ADC 10-bit đọc giá trị 768 với Vref = 5V thì điện áp đầu vào gần đúng là bao nhiêu?",
+        options: [
+            "A. 2.5 V",
+            "B. 3.75 V",
+            "C. 4.0 V",
+            "D. 3.0 V"
+        ],
+        correctIndex: 1,
+        explanation: "Công thức tính điện áp cho ADC 10-bit: Vin = (giá trị ADC × Vref) / 1024. 768 × 5 / 1024 = 3.75 V (2¹⁰ = 1024 mức phân giải)."
+    },
+    {
+        question: "Câu 183. Breadboard thường không phù hợp với loại ứng dụng nào?",
+        options: [
+            "A. Thử nghiệm prototype",
+            "B. Mạch thí nghiệm trong lab",
+            "C. Ứng dụng sản xuất hàng loạt hoặc môi trường khắc nghiệt (có rung lắc, tần số cao)",
+            "D. Mạch DC đơn giản"
+        ],
+        correctIndex: 2,
+        explanation: "Breadboard chỉ dùng cho prototyping tạm thời. Nó không ổn định cho sản xuất (tiếp xúc lỏng lẻo, dễ rung), mạch tần số cao (parasitic capacitance/inductance gây nhiễu) hoặc môi trường khắc nghiệt."
+    },
+    {
+        question: "Câu 184. QoS 2 trong MQTT đảm bảo cơ chế truyền dữ liệu như thế nào?",
+        options: [
+            "A. At most once (tối đa một lần)",
+            "B. At least once (ít nhất một lần)",
+            "C. Exactly once (chính xác một lần)",
+            "D. Best effort không đảm bảo"
+        ],
+        correctIndex: 2,
+        explanation: "QoS 2 sử dụng 4-step handshake (PUBLISH → PUBREC → PUBREL → PUBCOMP) để đảm bảo message được truyền chính xác một lần duy nhất, không mất và không trùng lặp."
+    },
+    {
+        question: "Câu 185. MQTT sử dụng TCP chủ yếu nhằm mục đích gì?",
+        options: [
+            "A. Giảm băng thông",
+            "B. Đảm bảo truyền tin cậy, thứ tự gói tin và kiểm soát luồng",
+            "C. Hỗ trợ broadcast",
+            "D. Giảm độ trễ tối đa"
+        ],
+        correctIndex: 1,
+        explanation: "TCP cung cấp kết nối đáng tin cậy (reliable, ordered delivery, error checking, retransmission), phù hợp với yêu cầu QoS của MQTT. MQTT bản thân là lightweight, nhưng transport layer dùng TCP để đảm bảo độ tin cậy."
+    },
+    {
+        question: "Câu 186. Điều gì xảy ra nếu MQTT Broker bị down trong hệ thống?",
+        options: [
+            "A. Clients vẫn publish/subscribe bình thường",
+            "B. Các client mất kết nối, không thể publish hoặc subscribe mới",
+            "C. Tất cả message được lưu trữ vĩnh viễn trên client",
+            "D. Hệ thống tự động chuyển sang broker backup ngay lập tức"
+        ],
+        correctIndex: 1,
+        explanation: "Broker là trung tâm routing message. Khi broker down, giao tiếp pub/sub dừng lại cho đến khi broker hoạt động lại. Client có thể buffer message (tùy QoS và persistent session) nhưng không thể trao đổi được."
+    },
+    {
+        question: "Câu 187. Topic “factory/+/temp” trong MQTT có thể match với topic nào?",
+        options: [
+            "A. factory/temp",
+            "B. factory/line1/temp",
+            "C. factory/line1/sensor/temp",
+            "D. temp/factory/machine"
+        ],
+        correctIndex: 1,
+        explanation: "Dấu “+” là single-level wildcard, chỉ match đúng một level. Topic “factory/+/temp” sẽ match với factory/bất_kỳ_một_cấp/temp (ví dụ: factory/line1/temp, factory/machineA/temp), nhưng không match multi-level hoặc sai vị trí."
+    },
+    {
+        question: "Câu 188. Retain message trong MQTT được dùng để làm gì?",
+        options: [
+            "A. Lưu message để gửi lại nếu mất kết nối",
+            "B. Cho phép subscriber mới nhận ngay lập tức giá trị cuối cùng của topic",
+            "C. Tăng QoS lên mức cao nhất",
+            "D. Mã hóa dữ liệu"
+        ],
+        correctIndex: 1,
+        explanation: "Khi publish retain flag = true, broker sẽ lưu message cuối cùng của topic. Bất kỳ subscriber mới nào subscribe topic đó sẽ nhận ngay message retain (last known value) mà không cần chờ publish mới."
+    },
+    {
+        question: "Câu 189. TLS trong MQTT có vai trò chính nào?",
+        options: [
+            "A. Tăng tốc độ truyền",
+            "B. Đảm bảo bảo mật: mã hóa dữ liệu và xác thực",
+            "C. Giảm kích thước packet",
+            "D. Hỗ trợ QoS 2"
+        ],
+        correctIndex: 1,
+        explanation: "TLS (thường dùng trên port 8883) cung cấp encryption (mã hóa dữ liệu), integrity và authentication (xác thực server/client), bảo vệ kết nối MQTT khỏi eavesdropping, tampering và man-in-the-middle attack."
+    },
+    {
+        question: "Câu 190. Nếu truyền 200 message mỗi giây, mỗi message 50 byte thì bandwidth gần đúng là bao nhiêu?",
+        options: [
+            "A. 8 kbps",
+            "B. 80 kbps",
+            "C. 800 kbps",
+            "D. 10 Mbps"
+        ],
+        correctIndex: 1,
+        explanation: "Bandwidth = 200 msg/s × 50 byte/msg × 8 bit/byte = 80.000 bps = 80 kbps (chưa tính overhead MQTT/TCP/IP, nên là giá trị gần đúng)."
+    },
+    {
+        question: "Câu 191. Khi một publisher gửi dữ liệu tới 20 subscriber thì outbound traffic của broker thay đổi như thế nào?",
+        options: [
+            "A. Không thay đổi",
+            "B. Giảm nhẹ do tối ưu hóa",
+            "C. Tăng gấp 20 lần",
+            "D. Tăng gấp 2 lần"
+        ],
+        correctIndex: 2,
+        explanation: "Trong mô hình publish-subscribe (MQTT, Kafka…), broker chỉ nhận 1 bản tin từ publisher nhưng phải forward (gửi ra) đúng 20 bản tin giống hệt đến 20 subscriber. Do đó outbound traffic của broker tăng gấp 20 lần so với inbound traffic."
+    },
+    {
+        question: "Câu 192. UART có baud rate 9600bps thì thời gian truyền của 1 bit gần đúng là bao nhiêu?",
+        options: [
+            "A. 1 ms",
+            "B. 104 µs",
+            "C. 9600 µs",
+            "D. 0,1 s"
+        ],
+        correctIndex: 1,
+        explanation: "Baud rate = 9600 bit/giây → thời gian truyền 1 bit = 1/9600 ≈ 0,000104167 giây = 104 µs (giá trị gần đúng thường dùng)."
+    },
+    {
+        question: "Câu 193. UART frame gồm 1 start bit, 8 data bit và 1 stop bit sẽ có tổng cộng bao nhiêu bit?",
+        options: [
+            "A. 8 bit",
+            "B. 9 bit",
+            "C. 10 bit",
+            "D. 11 bit"
+        ],
+        correctIndex: 2,
+        explanation: "Tổng bit = 1 (start) + 8 (data) + 1 (stop) = 10 bit. (Nếu có parity bit thì sẽ là 11 bit, nhưng câu hỏi không đề cập parity)."
+    },
+    {
+        question: "Câu 194. Baud rate mismatch trong UART thường gây ra hiện tượng gì?",
+        options: [
+            "A. Tăng tốc độ truyền",
+            "B. Dữ liệu bị nhận sai (garbled data / framing error)",
+            "C. Tự động đồng bộ lại",
+            "D. Không ảnh hưởng gì"
+        ],
+        correctIndex: 1,
+        explanation: "Khi hai bên UART có baud rate khác nhau (thường >5-10%), bên nhận sẽ lấy mẫu bit ở thời điểm sai → bit bị lệch, dẫn đến framing error và dữ liệu nhận được hoàn toàn sai (garbled data)."
+    },
+    {
+        question: "Câu 195. RS485 có khả năng chống nhiễu tốt chủ yếu nhờ kỹ thuật nào?",
+        options: [
+            "A. Tăng cường độ tín hiệu",
+            "B. Tín hiệu vi sai (differential signaling)",
+            "C. Sử dụng cáp quang",
+            "D. Thêm nhiều bit parity"
+        ],
+        correctIndex: 1,
+        explanation: "RS485 dùng cặp dây twisted-pair với tín hiệu vi sai (A và B ngược pha). Nhiễu chung mode bị triệt tiêu, chỉ giữ lại tín hiệu vi sai → khả năng chống nhiễu rất cao, truyền xa đến 1200 m."
+    },
+    {
+        question: "Câu 196. Half-duplex nghĩa là gì trong truyền thông dữ liệu?",
+        options: [
+            "A. Chỉ truyền một chiều",
+            "B. Truyền hai chiều cùng lúc (full-duplex)",
+            "C. Truyền hai chiều nhưng không đồng thời",
+            "D. Không truyền được"
+        ],
+        correctIndex: 2,
+        explanation: "Half-duplex cho phép truyền cả hai chiều (TX/RX) nhưng chỉ một chiều hoạt động tại một thời điểm (như RS485, walkie-talkie). Full-duplex mới truyền đồng thời hai chiều."
+    },
+    {
+        question: "Câu 197. CRC trong Modbus được sử dụng với mục đích gì?",
+        options: [
+            "A. Mã hóa dữ liệu",
+            "B. Phát hiện lỗi truyền (error detection)",
+            "C. Tăng tốc độ truyền",
+            "D. Đồng bộ clock"
+        ],
+        correctIndex: 1,
+        explanation: "CRC (Cyclic Redundancy Check) là mã kiểm tra dư thừa dùng để phát hiện lỗi bit trong frame Modbus. Receiver tính lại CRC và so sánh với giá trị nhận được; nếu khác thì frame bị lỗi."
+    },
+    {
+        question: "Câu 198. Khoảng thời gian 3.5 character time trong Modbus RTU dùng để làm gì?",
+        options: [
+            "A. Tăng tốc độ baud rate",
+            "B. Phân biệt ranh giới giữa các frame (end of frame)",
+            "C. Đồng bộ baud rate",
+            "D. Thêm dữ liệu parity"
+        ],
+        correctIndex: 1,
+        explanation: "Modbus RTU không có byte Start/Stop frame rõ ràng. Quy tắc im lặng 3,5 character time (tạm dừng truyền) được dùng để nhận biết kết thúc một frame và bắt đầu frame mới."
+    },
+    {
+        question: "Câu 199. Vì sao SPI thường có tốc độ cao hơn UART?",
+        options: [
+            "A. SPI dùng ít chân hơn",
+            "B. SPI là giao thức đồng bộ, không có overhead start/stop bit và baud rate mismatch",
+            "C. SPI chỉ truyền một chiều",
+            "D. SPI dùng điện áp cao hơn"
+        ],
+        correctIndex: 1,
+        explanation: "SPI là synchronous (dùng clock riêng), không cần start/stop bit, parity, không lo mismatch baud rate. Clock có thể lên hàng chục MHz, trong khi UART thường giới hạn vài Mbps và có overhead 20-30% (start/stop bits)."
+    },
+    {
+        question: "Câu 200. Overfitting xảy ra khi mô hình học máy rơi vào trạng thái nào?",
+        options: [
+            "A. Mô hình quá đơn giản, bias cao",
+            "B. Mô hình học cả nhiễu và pattern của dữ liệu huấn luyện, generalize kém",
+            "C. Mô hình chưa học đủ (underfitting)",
+            "D. Mô hình chỉ học được pattern tuyến tính"
+        ],
+        correctIndex: 1,
+        explanation: "Overfitting là tình trạng mô hình học thuộc lòng (memorize) cả nhiễu ngẫu nhiên trong tập train → accuracy trên train rất cao nhưng accuracy trên validation/test rất thấp (không generalize được)."
+    },
+    {
+        question: "Câu 201. Dataset imbalance thường gây ảnh hưởng gì đến mô hình AI?",
+        options: [
+            "A. Làm tăng độ chính xác tổng thể và giảm thời gian huấn luyện",
+            "B. Làm mô hình bias mạnh về lớp majority, hiệu suất kém trên lớp minority",
+            "C. Tăng khả năng generalization của mô hình",
+            "D. Giảm nguy cơ overfitting hoàn toàn"
+        ],
+        correctIndex: 1,
+        explanation: "Dataset imbalance khiến mô hình ưu tiên học lớp có nhiều dữ liệu hơn (majority class), dẫn đến bias, recall/precision thấp trên lớp ít dữ liệu (minority class) và metrics tổng thể không phản ánh thực tế."
+    },
+    {
+        question: "Câu 202. Edge AI giúp cải thiện yếu tố nào trong hệ thống IoT?",
+        options: [
+            "A. Tăng dung lượng lưu trữ đám mây",
+            "B. Giảm độ trễ (latency) và tăng tốc độ xử lý thời gian thực",
+            "C. Tăng chi phí truyền dữ liệu lên cloud",
+            "D. Giảm hoàn toàn nhu cầu sử dụng cảm biến"
+        ],
+        correctIndex: 1,
+        explanation: "Edge AI xử lý dữ liệu ngay tại thiết bị edge thay vì gửi hết lên cloud, giúp giảm đáng kể độ trễ và cho phép phản hồi thời gian thực – yếu tố quan trọng nhất trong IoT."
+    },
+    {
+        question: "Câu 203. Dữ liệu cảm biến trong hệ thống IoT thường có đặc điểm gì?",
+        options: [
+            "A. Luôn sạch, hoàn chỉnh và tĩnh (không thay đổi theo thời gian)",
+            "B. Thường noisy, streaming thời gian thực, có nhiễu và không đồng nhất",
+            "C. Chỉ bao gồm dữ liệu văn bản có cấu trúc",
+            "D. Dung lượng rất nhỏ và không cần xử lý"
+        ],
+        correctIndex: 1,
+        explanation: "Dữ liệu cảm biến IoT thường là chuỗi thời gian (time-series), đến liên tục (streaming), có nhiễu cao do môi trường, có thể bị mất gói tin, và rất không đồng nhất giữa các loại cảm biến."
+    },
+    {
+        question: "Câu 204. Pipeline AI đúng thường bao gồm các bước theo thứ tự nào?",
+        options: [
+            "A. Huấn luyện mô hình → Thu thập dữ liệu → Đánh giá → Triển khai",
+            "B. Thu thập dữ liệu → Tiền xử lý → Feature engineering → Huấn luyện → Đánh giá → Triển khai",
+            "C. Triển khai → Đánh giá → Tiền xử lý → Thu thập dữ liệu",
+            "D. Feature engineering → Huấn luyện → Thu thập dữ liệu → Tiền xử lý"
+        ],
+        correctIndex: 1,
+        explanation: "Pipeline AI (Machine Learning Pipeline) chuẩn theo thứ tự logic: thu thập → làm sạch & tiền xử lý → trích xuất đặc trưng → huấn luyện → đánh giá → triển khai & giám sát. Thứ tự sai sẽ làm pipeline không hoạt động hiệu quả."
+    },
+    {
+        question: "Câu 205. Sự kết hợp giữa IoT và AI giúp hệ thống chuyển từ reactive sang dạng nào?",
+        options: [
+            "A. Từ reactive sang hoàn toàn thủ công",
+            "B. Từ reactive sang predictive (dự đoán) / proactive (chủ động)",
+            "C. Từ reactive sang batch processing",
+            "D. Từ reactive sang offline processing"
+        ],
+        correctIndex: 1,
+        explanation: "IoT thuần túy chỉ “phản ứng” khi có sự kiện (reactive). Khi kết hợp AI, hệ thống có khả năng dự đoán xu hướng và hành động chủ động (predictive/proactive), ví dụ: dự báo hỏng hóc trước khi xảy ra."
+    },
+    {
+        question: "Câu 206. Ưu điểm chính của vTaskDelay() so với delay() trong FreeRTOS là gì?",
+        options: [
+            "A. vTaskDelay() làm task chạy nhanh hơn delay()",
+            "B. vTaskDelay() cho phép scheduler chuyển task khác chạy (non-blocking), delay() là busy-wait",
+            "C. vTaskDelay() không dùng tick của RTOS",
+            "D. vTaskDelay() chỉ dùng được trên ESP32"
+        ],
+        correctIndex: 1,
+        explanation: "vTaskDelay() đưa task vào trạng thái Blocked theo số tick của FreeRTOS, cho phép các task khác chạy ngay lập tức. delay() (thường từ Arduino) là busy-wait loop, chặn toàn bộ CPU."
+    },
+    {
+        question: "Câu 207. FreeRTOS chủ yếu được viết bằng ngôn ngữ lập trình nào?",
+        options: [
+            "A. Python",
+            "B. C",
+            "C. Java",
+            "D. C++"
+        ],
+        correctIndex: 1,
+        explanation: "FreeRTOS được viết chủ yếu bằng ngôn ngữ C (với một ít assembly cho phần port), giúp dễ port sang nhiều nền tảng vi điều khiển và có footprint rất nhỏ."
+    },
+    {
+        question: "Câu 208. Vì sao FreeRTOS phù hợp với hệ thống nhúng?",
+        options: [
+            "A. Vì nó yêu cầu RAM và ROM rất lớn",
+            "B. Vì nó có footprint bộ nhớ nhỏ, hỗ trợ real-time, miễn phí và dễ port",
+            "C. Vì nó chỉ chạy được trên Windows",
+            "D. Vì nó không hỗ trợ đa nhiệm"
+        ],
+        correctIndex: 1,
+        explanation: "FreeRTOS có kích thước cực nhỏ (kernel chỉ vài KB), cung cấp lập lịch real-time, đa nhiệm, và được port cho hàng trăm loại MCU, rất phù hợp với tài nguyên hạn chế của hệ thống nhúng."
+    },
+    {
+        question: "Câu 209. Hàm xTaskCreatePinnedToCore() trong FreeRTOS dùng để làm gì?",
+        options: [
+            "A. Tạo task và chạy trên core ngẫu nhiên",
+            "B. Tạo task và ghim (pin) task đó vào một core cụ thể (0 hoặc 1)",
+            "C. Chỉ dùng để xóa task",
+            "D. Chỉ dùng để delay task"
+        ],
+        correctIndex: 1,
+        explanation: "xTaskCreatePinnedToCore() cho phép tạo task và chỉ định core (0 hoặc 1 trên ESP32) để task luôn chạy trên core đó – rất quan trọng khi muốn phân bổ tải giữa 2 core."
+    },
+    {
+        question: "Câu 210. ESP32 thông thường có bao nhiêu lõi xử lý?",
+        options: [
+            "A. 1 lõi",
+            "B. 2 lõi (dual-core)",
+            "C. 4 lõi",
+            "D. 8 lõi"
+        ],
+        correctIndex: 1,
+        explanation: "ESP32 (các biến thể phổ biến như ESP32-WROOM) sử dụng bộ xử lý Xtensa LX6 dual-core (2 lõi), cho phép chạy song song các task và hỗ trợ tốt FreeRTOS."
+    },
+    {
+        question: "Câu 211. Trong Flutter kết hợp MQTT, việc subscribe bằng stream mang lại lợi ích gì?",
+        options: [
+            "A. Tăng tốc độ kết nối MQTT lên gấp đôi so với cách subscribe thông thường",
+            "B. Giúp app tự động reconnect khi mạng mất mà không cần code thêm",
+            "C. Cho phép xử lý dữ liệu bất đồng bộ, reactive và dễ dàng kết hợp với StreamBuilder để cập nhật UI thời gian thực mà không block main thread",
+            "D. Tự động mã hóa toàn bộ payload trước khi nhận"
+        ],
+        correctIndex: 2,
+        explanation: "Khi dùng mqttClient.updates (hoặc messages stream) trong package mqtt_client, bạn nhận được Stream<List<MqttReceivedMessage>>. Stream này cho phép xử lý dữ liệu theo kiểu reactive, kết hợp hoàn hảo với StreamBuilder hoặc ValueNotifier/Riverpod, giúp UI tự động rebuild khi có message mới mà không cần polling hay setState thủ công. Các lựa chọn còn lại không đúng về bản chất của stream subscribe."
+    },
+    {
+        question: "Câu 212. Vì sao MQTT subscribe hiệu quả hơn polling trong hệ IoT realtime?",
+        options: [
+            "A. Vì MQTT dùng ít bộ nhớ RAM hơn polling",
+            "B. Subscribe là cơ chế push (server chủ động gửi khi có dữ liệu), không cần client liên tục request → tiết kiệm băng thông, pin và giảm độ trễ xuống mức milliseconds",
+            "C. Polling chỉ hoạt động được trên Wi-Fi, còn MQTT hoạt động được trên 2G/3G",
+            "D. Subscribe tự động nén dữ liệu nên truyền nhanh hơn"
+        ],
+        correctIndex: 1,
+        explanation: "Đây là ưu điểm cốt lõi của mô hình publish/subscribe. Polling (client hỏi định kỳ “có gì mới không?”) gây tốn băng thông, pin và độ trễ cao (thường vài giây). MQTT subscribe chỉ nhận message khi broker push → rất phù hợp cho IoT realtime (như cảm biến, điều khiển thiết bị)."
+    },
+    {
+        question: "Câu 213. Nếu app publish lệnh bật LED nhưng UI không phản ánh đúng trạng thái thiết bị thì nguyên nhân hợp lý nhất là gì?",
+        options: [
+            "A. Broker bị lỗi, không forward message",
+            "B. App chỉ update UI ngay sau khi publish lệnh (command topic) mà chưa subscribe và lắng nghe topic trạng thái thực (status/feedback topic) do thiết bị publish lại",
+            "C. LED bị hỏng phần cứng nên không bật được",
+            "D. Quên gọi client.disconnect() sau khi publish"
+        ],
+        correctIndex: 1,
+        explanation: "Trong IoT tốt nhất luôn tách biệt “command” (app → device) và “status” (device → broker). Thiết bị sau khi nhận lệnh và bật LED thật sẽ publish lại trạng thái mới lên topic status. Nếu UI chỉ dựa vào việc “tôi vừa publish” thì sẽ sai lệch khi device thực thi chậm, lỗi hoặc trạng thái thay đổi từ nơi khác. Đây là lỗi thiết kế phổ biến nhất."
+    },
+    {
+        question: "Câu 214. Trong hệ Flutter + MQTT, vì sao dữ liệu nhận từ broker thường cần parse trước khi xử lý?",
+        options: [
+            "A. Vì broker luôn trả về dữ liệu mã hóa AES nên phải decrypt trước",
+            "B. Payload nhận được thường là kiểu Uint8List hoặc String (thường ở định dạng JSON) nên phải parse thành object Dart (Map, class model) mới sử dụng được",
+            "C. Flutter không hỗ trợ kiểu dữ liệu raw nên phải chuyển sang String",
+            "D. Broker chỉ gửi Base64 nên phải decode trước khi parse"
+        ],
+        correctIndex: 1,
+        explanation: "Hàm onSubscribed hoặc stream updates trả về MqttPublishMessage với payload là Uint8List. Hầu hết dự án IoT dùng JSON để truyền dữ liệu nên cần utf8.decode rồi jsonDecode để chuyển thành Map<String, dynamic> hoặc model class (freezed/JsonSerializable). Nếu không parse sẽ không thể đọc được các trường như “ledState”, “temperature”…"
+    },
+    {
+        question: "Câu 215. Trong hệ IoT dùng MQTT, cơ chế nào giúp UI phản ánh đúng trạng thái thực của thiết bị?",
+        options: [
+            "A. Sử dụng QoS 2 cho mọi tin nhắn",
+            "B. Thiết bị luôn publish trạng thái hiện tại (retained message) lên topic status sau mỗi thay đổi; app subscribe topic này và cập nhật state/UI khi nhận được message (không dựa vào lệnh mình vừa publish)",
+            "C. Dùng Last Will and Testament (LWT) để báo thiết bị offline",
+            "D. Publish lệnh rồi chờ 500ms rồi tự update UI"
+        ],
+        correctIndex: 1,
+        explanation: "Đây chính là “state synchronization” pattern chuẩn trong MQTT IoT. Retained message (retain = true) giúp khi app reconnect sẽ nhận ngay trạng thái mới nhất. App chỉ nên hiển thị trạng thái từ topic status mà thiết bị publish, không nên tin vào “lệnh mình gửi”. Cách này đảm bảo UI luôn đồng bộ với thực tế dù có nhiều app cùng điều khiển hoặc thiết bị thay đổi trạng thái từ nút bấm vật lý."
+    }
+];
+
+        let currentQuestions = []
+        let userAnswers = []
+
+        // Hàm đảo mảng
+        function shuffle(array) {
+            const arr = [...array]
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1))
+                ;[arr[i], arr[j]] = [arr[j], arr[i]]
+            }
+            return arr
+        }
+
+        // Hàm đảo thứ tự đáp án của 1 câu hỏi
+        function shuffleOptions(question) {
+            const indices = [...Array(question.options.length).keys()] // [0,1,2,3]
+            const shuffledIndices = shuffle(indices)
+            
+            const newOptions = shuffledIndices.map(i => question.options[i])
+            const newCorrectIndex = shuffledIndices.indexOf(question.correctIndex)
+            
+            return {
+                ...question,
+                options: newOptions,
+                correctIndex: newCorrectIndex
+            }
+        }
+
+        // Render tất cả câu hỏi
+        function renderAllQuestions() {
+            const container = document.getElementById('questions-container')
+            container.innerHTML = ''
+
+            currentQuestions.forEach((q, qIndex) => {
+                const cardHTML = `
+                <div class="question-card bg-white rounded-3xl shadow-lg p-8 border border-slate-100">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-9 h-9 bg-blue-100 text-blue-700 font-bold rounded-2xl flex items-center justify-center text-lg">
+                            ${qIndex + 1}
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-2xl font-semibold text-slate-800 leading-tight mb-6">${q.question}</p>
+                            
+                            <div class="grid grid-cols-1 gap-4" id="options-${qIndex}">
+                                ${q.options.map((option, oIndex) => {
+                                    const letter = String.fromCharCode(65 + oIndex)
+                                    return `
+                                    <button onclick="selectAnswer(${qIndex}, ${oIndex})" 
+                                            id="btn-${qIndex}-${oIndex}"
+                                            class="option-btn w-full text-left flex items-center gap-4 px-6 py-6 bg-white border-2 border-slate-200 hover:border-blue-300 rounded-3xl text-lg font-medium text-slate-700">
+                                        <div class="w-8 h-8 flex-shrink-0 bg-slate-100 rounded-2xl flex items-center justify-center font-bold text-blue-600">
+                                            ${letter}
+                                        </div>
+                                        <span class="flex-1">${option}</span>
+                                    </button>`
+                                }).join('')}
+                            </div>
+
+                            <div id="feedback-${qIndex}" class="hidden mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                                <div id="result-${qIndex}" class="flex items-center gap-3 mb-4"></div>
+                                <div id="correct-display-${qIndex}" class="hidden mb-3 text-sm">
+                                    <span class="font-medium text-slate-600">Đáp án đúng là: </span>
+                                    <span id="correct-text-${qIndex}" class="font-semibold text-emerald-600"></span>
+                                </div>
+                                <div class="bg-white p-5 rounded-2xl">
+                                    <p class="text-slate-600 text-sm font-medium mb-2">💡 GIẢI THÍCH</p>
+                                    <p id="explanation-${qIndex}" class="text-slate-700 leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`
+
+                container.innerHTML += cardHTML
+            })
+
+            document.getElementById('total-count').textContent = currentQuestions.length
+            updateProgress()
+        }
+
+        function selectAnswer(qIndex, selectedIndex) {
+            const q = currentQuestions[qIndex]
+            userAnswers[qIndex] = selectedIndex
+
+            // Tắt nút
+            const optionsContainer = document.getElementById(`options-${qIndex}`)
+            const buttons = optionsContainer.querySelectorAll('button')
+            buttons.forEach(btn => btn.disabled = true)
+
+            const isCorrect = selectedIndex === q.correctIndex
+
+            if (isCorrect) {
+                const correctBtn = document.getElementById(`btn-${qIndex}-${selectedIndex}`)
+                correctBtn.classList.add('!border-emerald-500', '!bg-emerald-50', 'text-emerald-700')
+            } else {
+                const wrongBtn = document.getElementById(`btn-${qIndex}-${selectedIndex}`)
+                wrongBtn.classList.add('!border-red-500', '!bg-red-50', 'text-red-700')
+                
+                const correctBtn = document.getElementById(`btn-${qIndex}-${q.correctIndex}`)
+                correctBtn.classList.add('!border-emerald-500', '!bg-emerald-50', 'text-emerald-700')
+            }
+
+            showFeedback(qIndex, isCorrect)
+            updateProgress()
+        }
+
+        function showFeedback(qIndex, isCorrect) {
+            const feedbackDiv = document.getElementById(`feedback-${qIndex}`)
+            const resultDiv = document.getElementById(`result-${qIndex}`)
+            const explanationEl = document.getElementById(`explanation-${qIndex}`)
+            const correctDisplay = document.getElementById(`correct-display-${qIndex}`)
+
+            feedbackDiv.classList.remove('hidden')
+
+            const q = currentQuestions[qIndex]
+
+            if (isCorrect) {
+                resultDiv.innerHTML = `<div class="text-4xl">🎉</div><div><p class="text-2xl font-bold text-emerald-600">Đúng rồi!</p></div>`
+                correctDisplay.classList.add('hidden')
+            } else {
+                resultDiv.innerHTML = `<div class="text-4xl">😔</div><div><p class="text-2xl font-bold text-red-600">Chưa đúng</p></div>`
+                const letter = String.fromCharCode(65 + q.correctIndex)
+                document.getElementById(`correct-text-${qIndex}`).innerHTML = `<span class="text-xl">${letter}.</span> ${q.options[q.correctIndex]}`
+                correctDisplay.classList.remove('hidden')
+            }
+
+            explanationEl.innerHTML = q.explanation
+        }
+
+        function updateProgress() {
+            const answered = userAnswers.filter(ans => ans !== null && ans !== undefined).length
+            const score = userAnswers.reduce((acc, ans, i) => acc + (ans === currentQuestions[i].correctIndex ? 1 : 0), 0)
+            document.getElementById('answered-count').textContent = answered
+            document.getElementById('score-display').textContent = score
+        }
+
+        function submitQuiz() {
+            const total = currentQuestions.length
+            const correct = userAnswers.reduce((acc, ans, i) => acc + (ans === currentQuestions[i].correctIndex ? 1 : 0), 0)
+            const percentage = Math.round((correct / total) * 100)
+            alert(`🎯 Nộp bài xong!\n\nBạn đúng ${correct}/${total} câu (${percentage}%)`)
+        }
+
+        function startQuiz(isOriginalOrder = false) {
+            // Luôn đảo thứ tự đáp án của từng câu
+            let questions = originalQuestions.map(q => shuffleOptions(q))
+
+            if (isOriginalOrder) {
+                // Chỉ giữ thứ tự câu hỏi gốc, vẫn đảo đáp án
+                currentQuestions = questions
+            } else {
+                // Đảo cả thứ tự câu hỏi + đáp án
+                currentQuestions = shuffle(questions)
+            }
+
+            userAnswers = new Array(currentQuestions.length).fill(null)
+            renderAllQuestions()
+        }
+
+        function resetToOriginalOrder() {
+            startQuiz(true)
+        }
+
+        function restartWithShuffle() {
+            startQuiz(false)
+        }
+
+        // Khởi động
+        window.onload = () => {
+            startQuiz(false) // Mặc định đảo hết khi mở trang
+        }
+    </script>
+</body>
+</html>
