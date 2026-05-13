@@ -115,7 +115,7 @@
       <div id="genResult" class="gen-result" style="display:none;"></div>
     </div>
     <div class="big-spacer">
-      ▼ Cuộn xuống để xem ô số Number Box ▼
+      ▼  ▼
     </div>
     <div id="grid" class="grid"></div>
     <div class="controls-container">
@@ -378,14 +378,14 @@
 
     function startCountdown() {
       clearInterval(countdownInterval);
-      countdownTimer = 3;
+      countdownTimer = 1;
       document.getElementById('timer').textContent = countdownTimer;
       countdownInterval = setInterval(() => {
         countdownTimer--;
         document.getElementById('timer').textContent = countdownTimer;
         if (countdownTimer <= 0) {
           checkAndPredict();
-          countdownTimer = 3;
+          countdownTimer = 1;
           document.getElementById('timer').textContent = countdownTimer;
         }
       }, 1000);
