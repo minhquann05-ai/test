@@ -378,14 +378,14 @@
 
     function startCountdown() {
       clearInterval(countdownInterval);
-      countdownTimer = 1;
+      countdownTimer = 2;
       document.getElementById('timer').textContent = countdownTimer;
       countdownInterval = setInterval(() => {
         countdownTimer--;
         document.getElementById('timer').textContent = countdownTimer;
         if (countdownTimer <= 0) {
           checkAndPredict();
-          countdownTimer = 1;
+          countdownTimer = 2;
           document.getElementById('timer').textContent = countdownTimer;
         }
       }, 1000);
